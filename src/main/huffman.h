@@ -6,7 +6,7 @@
 #include <string.h>
 
 #define MAX_SYMBOL_BYTES 4
-#define INITIAL_PQ_CAPACITY 1024
+// #define INITIAL_PQ_CAPACITY 1024
 
 typedef struct {
 	uint8_t* symbol_data;
@@ -59,6 +59,7 @@ HuffmanTree* create_tree(Node* node, uint8_t symbol_len);
 void free_tree(HuffmanTree* tree);
 
 HashTable* create_hash_table(uint32_t capacity);
+void free_hash_table(HashTable* table);
 uint32_t hash_function(uint8_t* symbol, uint8_t symbol_len, uint32_t table_size);
 void add_symbol_hash(HashTable* table, uint8_t* symbol, uint8_t symbol_len);
 int compare_symbols(uint8_t* symbol1, uint8_t* symbol2, uint8_t symbol_len);

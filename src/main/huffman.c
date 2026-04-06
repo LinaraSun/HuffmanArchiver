@@ -81,9 +81,10 @@ Node* pq_merge(PriorityQueue* pq) {
 
 void pq_free(PriorityQueue* pq) {
 	if (!pq) return NULL;
-	for (uint32_t i = 0; i < pq->size; i++) {
+	/* for (uint32_t i = 0; i < pq->size; i++) {
 		free_node(pq->nodes[i]);
 	}
+	free(pq->nodes); */
 	free(pq->nodes);
 	free(pq);
 }
@@ -131,6 +132,12 @@ HashTable* create_hash_table(uint32_t capacity) {
 	table->size = 0;
 	table->capacity = capacity;
 	return table;
+}
+
+void free_hash_table(HashTable* table) {
+	if (!table) return;
+	if (table->buckets) free(table->buckets);
+	free(table);
 }
 
 uint32_t hash_function(uint8_t* symbol, uint8_t symbol_len, uint32_t table_size) {
