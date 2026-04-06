@@ -2,19 +2,24 @@
 
 HuffmanTree* count_freq_1b(FILE* file) {
 	uint32_t* freq = (uint32_t*)malloc(sizeof(uint32_t) * 256);
+
 	if (freq == NULL) {
 		// Error handling
 		return NULL;
 	}
+
 	for (int i = 0; i < 256; i++) {
 		freq[i] = 0;
 	}
+
 	uint8_t* byte = (uint8_t)malloc(sizeof(uint8_t));
+
 	if (byte == NULL) {
 		// Error handling
 		free(freq);
 		return NULL;
 	}
+
 	while (fread(byte, 1, 1, file)) {
 		freq[byte[0]]++;
 	}
@@ -56,11 +61,11 @@ HuffmanTree* count_freq_hash(FILE* file, uint8_t symbol_len) {
 	uint32_t table_size = 0;
 
 	if (symbol_len == 2) {
-		uint32_t table_size = 8192;
+		table_size = 8192;
 	} else if (symbol_len == 3) {
-		uint32_t table_size = 16384;
+		table_size = 16384;
 	} else if (symbol_len == 4) {
-		uint32_t table_size = 32768;
+		table_size = 32768;
 	}
 
 	HashTable* hash_table = create_hash_table(table_size);
@@ -69,12 +74,12 @@ HuffmanTree* count_freq_hash(FILE* file, uint8_t symbol_len) {
 	uint8_t bytes_read = 0;
 
 	while ((bytes_read = fread(buffer, 1, symbol_len, file)) == symbol_len) {
-		add_symbol_hash(hash_table, buffer, symbol_len);
+		add_symbol_hash(hash_table, buffer, symbol_len, 0, 0);
 	}
 
 	if (bytes_read > 0) {
 		memset(buffer + bytes_read, 0, symbol_len - bytes_read);
-		add_symbol_hash(hash_table, buffer, symbol_len);
+		add_symbol_hash(hash_table, buffer, symbol_len, 0, 0);
 	}
 
 	PriorityQueue* pq = pq_create(hash_table->size);
@@ -166,15 +171,103 @@ int write_header_to_file(FILE* out, HuffmanTree* ht, uint64_t original_file_size
 	return 0;
 }
 
-int write_encoded_file(FILE* input, FILE* output, HuffmanTree* ht) {
-	uint8_t symbol_len = ht->symbol_length;
-	uint8_t* buffer = (uint8_t*)malloc(sizeof(uint8_t) * symbol_len);
-	uint8_t bytes_read = 0;
-	HashTable* table = create_hash_table(ht->symbols_count);
-	for (int i = 0; i < ht->symbols_count; i++) {
-		add_symbol_hash(table, ht->symbols[i], symbol_len);
+int write_encoded_file_1b(FILE* input, FILE* output, HuffmanTree* ht) {
+
+	uint32_t* codes = (uint32_t*)malloc(sizeof(uint32_t) * 256);
+	uint8_t* code_lengths = (uint8_t*)malloc(sizeof(uint8_t) * 256);
+
+	if (!codes) {
+		// Error
+		return 1;
 	}
-	while ((bytes_read = fread(buffer, 1, symbol_len, input)) == symbol_len) {}
+
+	uint8_t* buffer = (uint8_t*)malloc(sizeof(uint8_t));
+
+	for (int i = 0; i < 256; i++) {
+		codes[ht->symbols[i][0]] = ht->codes[i];
+	}
+
+	uint8_t bytes_read = 0;
+
+	uint8_t byte = 0;
+	uint8_t bits_read = 0;
+
+	while ((bytes_read = fread(buffer, 1, 1, input)) == 1) {
+		uint32_t code = codes[buffer[0]];
+		uint8_t code_len = code_lengths[buffer[0]];
+		while (code_len > 0) {
+			byte = (byte << 1) | ((code >> (code_len - 1)) & 1);
+			code_len--;
+			bits_read++;
+			if (bits_read == 8) {
+				if (fwrite(&byte, 1, 1, output) != 1) {
+					// Error
+					// Free everything
+					return 1;
+				}
+				byte = 0;
+				bits_read = 0;
+			}
+		}
+	}
+
+	// Free everything
+	return 0;
+}
+
+int write_encoded_file_hash(FILE* input, FILE* output, HuffmanTree* ht) {
+
+	uint8_t symbol_len = ht->symbol_length;
+
+	uint32_t table_size = 0;
+	if (symbol_len == 2) {
+		table_size = 8192;
+	} else if (symbol_len == 3) {
+		table_size = 16384;
+	} else if (symbol_len == 4) {
+		table_size = 32768;
+	}
+
+	uint8_t* buffer = (uint8_t*)malloc(sizeof(uint8_t) * symbol_len);
+
+	if (!buffer) {
+		// Error
+		return 1;
+	}
+
+	uint8_t bytes_read = 0;
+	HashTable* table = create_hash_table(table_size);
+
+	for (int i = 0; i < ht->symbols_count; i++) {
+		add_symbol_hash(table, ht->symbols[i], symbol_len, ht->codes[i], ht->code_lengths[i]);
+	}
+
+	uint8_t byte = 0;
+	uint8_t bits_read = 0;
+
+	while ((bytes_read = fread(buffer, 1, symbol_len, input)) == symbol_len) {
+		uint32_t hash_index = hash_function(buffer, symbol_len, table_size);
+		HashTableEntry* entry = table->buckets[hash_index];
+		uint32_t code = entry->code;
+		uint8_t code_len = entry->code_len;
+		while (code_len > 0) {
+			byte = (byte << 1) | ((code >> (code_len - 1)) & 1);
+			code_len--;
+			bits_read++;
+			if (bits_read == 8) {
+				if (fwrite(&byte, 1, 1, output) != 1) {
+					// Error
+					// Free everything
+					return 1;
+				}
+				byte = 0;
+				bits_read = 0;
+			}
+		}
+	}
+
+	// Free everything
+	return 0;
 }
 
 int compress_file(FILE* input, FILE* output, uint8_t symbol_len, uint64_t original_file_size) {
@@ -191,5 +284,13 @@ int compress_file(FILE* input, FILE* output, uint8_t symbol_len, uint64_t origin
 		return 1;
 	}
 
-	// if (write_encoded_file(input, output, ))
+	if (symbol_len == 1) {
+		// write_encoded_file_1b
+	} else {
+		if (write_encoded_file(input, output, tree) != 0) {
+			return 1;
+		}
+	}
+
+	return 0;
 }

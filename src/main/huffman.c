@@ -148,7 +148,7 @@ uint32_t hash_function(uint8_t* symbol, uint8_t symbol_len, uint32_t table_size)
 	return hash % table_size;
 }
 
-void add_symbol_hash(HashTable* table, uint8_t* symbol, uint8_t symbol_len) {
+void add_symbol_hash(HashTable* table, uint8_t* symbol, uint8_t symbol_len, uint32_t code, uint8_t code_len) {
 	uint32_t hash_index = hash_function(symbol, symbol_len, table->capacity);
 
 	HashTableEntry* current = table->buckets[hash_index];
@@ -170,6 +170,8 @@ void add_symbol_hash(HashTable* table, uint8_t* symbol, uint8_t symbol_len) {
 	new_entry->frequency = 1;
 	new_entry->symbol_len = symbol_len;
 	new_entry->next = table->buckets[hash_index];
+	new_entry->code_len = code_len;
+	new_entry->code = code;
 	table->buckets[hash_index] = new_entry;
 	table->size++;
 }

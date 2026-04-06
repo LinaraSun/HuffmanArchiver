@@ -35,6 +35,7 @@ typedef struct {
 	uint8_t* symbol_data;
 	uint32_t frequency;
 	uint8_t symbol_len;
+	uint32_t code;
 	uint8_t code_len;
 	HashTableEntry* next;
 } HashTableEntry;
@@ -61,7 +62,7 @@ void free_tree(HuffmanTree* tree);
 HashTable* create_hash_table(uint32_t capacity);
 void free_hash_table(HashTable* table);
 uint32_t hash_function(uint8_t* symbol, uint8_t symbol_len, uint32_t table_size);
-void add_symbol_hash(HashTable* table, uint8_t* symbol, uint8_t symbol_len);
+void add_symbol_hash(HashTable* table, uint8_t* symbol, uint8_t symbol_len, uint32_t code, uint8_t code_len);
 int compare_symbols(uint8_t* symbol1, uint8_t* symbol2, uint8_t symbol_len);
 
 int compress_file(FILE* input, FILE* output, uint8_t symbol_len, uint64_t original_file_size);
@@ -70,7 +71,8 @@ HuffmanTree* count_freq_hash(FILE* file, uint8_t symbol_len);
 void encoding(HuffmanTree* ht);
 void encoding_recursion(HuffmanTree* ht, Node* node, uint32_t code, uint8_t code_len);
 int write_header_to_file(FILE* out, HuffmanTree* ht, uint64_t original_file_size);
-int write_encoded_file(FILE* input, FILE* output, HuffmanTree* ht);
+int write_encoded_file_1b(FILE* input, FILE* output, HuffmanTree* ht);
+int write_encoded_file_hash(FILE* input, FILE* output, HuffmanTree* ht);
 
 int decompress_file(FILE* input, FILE* output, uint8_t symbol_len);
 #endif
