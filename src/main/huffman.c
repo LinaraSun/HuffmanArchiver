@@ -2,14 +2,28 @@
 
 Node* create_node(uint8_t* symbol, uint32_t freq, uint8_t symbol_len) {
 	Node* node = (Node*)malloc(sizeof(Node));
-	// if (!node) {}
-	// Should I even allocate memory for symbol data if symbol is NULL? 
-	node->symbol_data = (uint8_t*)malloc(sizeof(uint8_t) * symbol_len);
-	// if (!symbol_data) {}
+	if (!node) {
+		fprintf(stderr, "Failed to allocate memory for a node.\n");
+		return NULL;
+	}
+
 	node->frequency = freq;
 	node->symbol_length = symbol_len;
 	node->right = NULL;
 	node->left = NULL;
+
+	if (!symbol) {
+		node->symbol_data = NULL;
+		return node;
+	}
+
+	node->symbol_data = (uint8_t*)malloc(sizeof(uint8_t) * symbol_len);
+	if (!node->symbol_data) {
+		fprintf(stderr, "Failed to allocate memory for symbol data in a node.\n");
+	}
+
+	memcpy(node->symbol_data, symbol, symbol_len);
+
 	return node;
 }
 
@@ -23,30 +37,48 @@ void free_node(Node* node) {
 
 uint8_t node_is_leaf(Node* node) {
 	if (node->left || node->right) return 0;
-	else return 1;
+	return 1;
 }
 
 PriorityQueue* pq_create(uint32_t initial_capacity) {
+
 	PriorityQueue* pq = (PriorityQueue*)malloc(sizeof(PriorityQueue));
-	// if (!pq) {}
+	if (!pq) {
+		fprintf(stderr, "Failed to allocate memory for a priority queue.\n");
+		return NULL;
+	}
+
 	pq->nodes = (Node**)malloc(sizeof(Node*) * initial_capacity);
-	// if (!nodes) {}
+	if (!pq->nodes) {
+		fprintf(stderr, "Failed to allocate memory for nodes in a priority queue.\n");
+		return NULL;
+	}
+
 	pq->size = 0;
 	pq->capacity = initial_capacity;
 	return pq;
 }
 
 void pq_push(PriorityQueue* pq, Node* node) {
-	// if (!pq && !node) {}
-	// if (!pq) {}
-	// if (!node) {}
+	if (!pq) {
+		fprintf(stderr, "Invalid priority queue passed to pq_push.\n");
+		return;
+	}
+
+	if (!node) {
+		fprintf(stderr, "Invalid node passed to pq_push.\n");
+		return;
+	}
+
 	if (pq->size + 1 > pq->capacity) {
 		pq->capacity *= 2;
 		pq->nodes = (Node**)realloc(sizeof(Node*) * pq->capacity);
 	}
+
 	pq->nodes[pq->size] = node;
 	uint32_t current_index = pq->size;
 	pq->size++;
+
 	while (current_index >= 1 && pq->nodes[current_index - 1]->frequency < node->frequency) {
 		pq->nodes[current_index] = pq->nodes[current_index - 1];
 		pq->nodes[current_index - 1] = node;
@@ -55,6 +87,16 @@ void pq_push(PriorityQueue* pq, Node* node) {
 }
 
 Node* pq_pop(PriorityQueue* pq) {
+	if (!pq) {
+		fprintf(stderr, "Invalid priority queue passed to pq_pop.\n");
+		return NULL;
+	}
+
+	if (!pq->nodes[pq->size - 1]) {
+		fprintf(stderr, "Invalid node at the end of priority queue passed to pq_pop.\n");
+		return NULL;
+	}
+
 	Node* node = pq->nodes[pq->size - 1];
 	pq->nodes[pq->size - 1] = NULL;
 	pq->size--;
@@ -62,7 +104,11 @@ Node* pq_pop(PriorityQueue* pq) {
 }
 
 Node* pq_merge(PriorityQueue* pq) {
-	// if (!pq) {}
+	if (!pq) {
+		fprintf(stderr, "Invalid priority queue passed to pq_merge.\n");
+		return NULL;
+	}
+
 	while (pq->size > 1) {
 		Node* node1 = pq_pop(pq);
 		Node* node2 = pq_pop(pq);
@@ -76,29 +122,25 @@ Node* pq_merge(PriorityQueue* pq) {
 		}
 		pq_push(pq, res_node);
 	}
+
 	return pq->nodes[0];
 }
 
 void pq_free(PriorityQueue* pq) {
 	if (!pq) return NULL;
-	/* for (uint32_t i = 0; i < pq->size; i++) {
-		free_node(pq->nodes[i]);
-	}
-	free(pq->nodes); */
 	free(pq->nodes);
 	free(pq);
 }
 
 HuffmanTree* create_tree(Node* node, uint8_t symbol_len) {
 	HuffmanTree* ht = (HuffmanTree*)malloc(sizeof(HuffmanTree));
-	if (ht == NULL) {
-		// Error handling
+	if (!ht) {
+		fprintf(stderr, "Failed to allocate memory for the huffman tree.\n");
 		return NULL;
 	}
 
 	ht->root = node;
 	ht->codes = NULL;
-	// ht->frequencies = NULL;
 	ht->symbols = NULL;
 	ht->code_lengths = NULL;
 	ht->symbol_length = symbol_len;
@@ -109,8 +151,12 @@ HuffmanTree* create_tree(Node* node, uint8_t symbol_len) {
 void free_tree(HuffmanTree* ht) {
 	if (!ht) return NULL;
 	if (ht->root) free_node(ht->root);
-	if (ht->codes) free(ht->codes);
-	// if (ht->frequencies) free(ht->frequencies);
+	if (ht->codes) {
+		for (int i = 0; i < ht->symbols_count; i++) {
+			if (ht->codes[i]) free(ht->codes[i]);
+		}
+		free(ht->codes);
+	}
 	if (ht->symbols) free(ht->symbols);
 	if (ht->code_lengths) free(ht->code_lengths);
 	free(ht);
@@ -119,12 +165,13 @@ void free_tree(HuffmanTree* ht) {
 HashTable* create_hash_table(uint32_t capacity) {
 	HashTable* table = (HashTable*)malloc(sizeof(HashTable));
 	if (table == NULL) {
-		// Error handling
+		fprintf(stderr, "Failed to allocate memory for a hash table.\n");
 		return NULL;
 	}
+
 	table->buckets = calloc(capacity, sizeof(HashTableEntry*));
 	if (!table->buckets) {
-		// Error handling
+		fprintf(stderr, "Failed to allocate memory for buckets in hash table.\n");
 		free(table);
 		return NULL;
 	}
@@ -137,7 +184,15 @@ HashTable* create_hash_table(uint32_t capacity) {
 void free_hash_table(HashTable* table) {
 	if (!table) return;
 	if (table->buckets) free(table->buckets);
+	// Again, should I be worried here about the Individual entries?.. Yeah, I should
+	// So I write free_hash_entry function
 	free(table);
+}
+
+void free_hash_entry(HashTableEntry* entry) {
+	if (!entry) return;
+	if (entry->symbol_data) free(entry->symbol_data);
+	if (entry->next) free_hash_entry(entry->next);
 }
 
 uint32_t hash_function(uint8_t* symbol, uint8_t symbol_len, uint32_t table_size) {

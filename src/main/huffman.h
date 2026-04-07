@@ -61,6 +61,8 @@ void free_tree(HuffmanTree* tree);
 
 HashTable* create_hash_table(uint32_t capacity);
 void free_hash_table(HashTable* table);
+// TODO THIS!!
+void free_hash_entry(HashTableEntry* entry);
 uint32_t hash_function(uint8_t* symbol, uint8_t symbol_len, uint32_t table_size);
 void add_symbol_hash(HashTable* table, uint8_t* symbol, uint8_t symbol_len, uint32_t code, uint8_t code_len);
 int compare_symbols(uint8_t* symbol1, uint8_t* symbol2, uint8_t symbol_len);
