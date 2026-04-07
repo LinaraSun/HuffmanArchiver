@@ -1,13 +1,13 @@
 #include "huffman.h"
 
 HuffmanTree* count_freq_1b(FILE* file) {
-	uint32_t* freq = (uint32_t*)calloc(sizeof(uint32_t) * 256);
+	uint32_t* freq = (uint32_t*)calloc(sizeof(uint32_t) * 256, 1);
 	if (!freq) {
 		fprintf(stderr, "Failed to allocate memory for symbol frequncies during 1 byte compression.\n");
 		return NULL;
 	}
 
-	uint8_t* byte = (uint8_t)malloc(sizeof(uint8_t));
+	uint8_t* byte = (uint8_t*)malloc(sizeof(uint8_t));
 	if (!byte) {
 		fprintf(stderr, "Failed to allocate memory.\n");
 		free(freq);
@@ -17,6 +17,8 @@ HuffmanTree* count_freq_1b(FILE* file) {
 	while (fread(byte, 1, 1, file)) {
 		freq[byte[0]]++;
 	}
+
+	rewind(file);
 
 	uint32_t sym_count = 0;
 	PriorityQueue* pq = pq_create(256);
@@ -35,26 +37,43 @@ HuffmanTree* count_freq_1b(FILE* file) {
 	ht->codes = (uint32_t*)malloc(sizeof(uint32_t) * sym_count);
 	if (!ht->codes) {
 		fprintf(stderr, "Failed to allocate memory while counting frequencies.\n");
-		// Free all
-		return 1;
+		free(freq);
+		free(byte);
+		free(pq);
+		free_tree(ht);
+		return NULL;
 	}
 
 	ht->code_lengths = (uint8_t*)malloc(sizeof(uint8_t) * sym_count);
 	if (!ht->code_lengths) {
 		fprintf(stderr, "Failed to allocate memory while counting frequencies.\n");
-		// Free all
-		return 1;
+		free(freq);
+		free(byte);
+		free(pq);
+		free_tree(ht);
+		return NULL;
 	}
 
 	ht->symbols = (uint8_t**)malloc(sizeof(uint8_t*) * sym_count);
 	if (!ht->symbols) {
 		fprintf(stderr, "Failed to allocate memory while counting frequencies.\n");
-		// Free all
-		return 1;
+		free(freq);
+		free(byte);
+		free(pq);
+		free_tree(ht);
+		return NULL;
 	}
 
-	// If sym_count = 1 there will be an issue
-	encoding(ht);
+	if (sym_count == 1) {
+		fread(byte, 1, 1, file);
+		ht->codes[0] = 0;
+		ht->code_lengths[0] = 1;
+		ht->symbols[0] = byte;
+		ht->symbols_count = 1;
+		rewind(file);
+	} else {
+		encoding(ht);
+	}
 
 	free(freq);
 	free(byte);
@@ -76,6 +95,12 @@ HuffmanTree* count_freq_hash(FILE* file, uint8_t symbol_len) {
 	HashTable* hash_table = create_hash_table(table_size);
 
 	uint8_t* buffer = (uint8_t*)malloc(sizeof(uint8_t) * symbol_len);
+	if (!buffer) {
+		fprintf(stderr, "Failed to allocate memory while counting frequencies.\n");
+		free_hash_table(hash_table);
+		return NULL;
+	}
+
 	uint8_t bytes_read = 0;
 
 	while ((bytes_read = fread(buffer, 1, symbol_len, file)) == symbol_len) {
@@ -87,6 +112,8 @@ HuffmanTree* count_freq_hash(FILE* file, uint8_t symbol_len) {
 		add_symbol_hash(hash_table, buffer, symbol_len, 0, 0);
 	}
 
+	rewind(file);
+
 	PriorityQueue* pq = pq_create(hash_table->size);
 	for (int i = 0; i < table_size; i++) {
 		HashTableEntry* entry = hash_table->buckets[i];
@@ -97,10 +124,50 @@ HuffmanTree* count_freq_hash(FILE* file, uint8_t symbol_len) {
 		}
 	}
 
+	uint32_t sym_count = pq->size;
 	Node* root = pq_merge(pq);
 	HuffmanTree* ht = create_tree(root, symbol_len);
 
-	encoding(ht);
+	ht->codes = (uint32_t*)malloc(sizeof(uint32_t) * sym_count);
+	if (!ht->codes) {
+		fprintf(stderr, "Failed to allocate memory while counting frequncies.\n");
+		free_hash_table(hash_table);
+		free(buffer);
+		pq_free(pq);
+		free_tree(ht);
+		return NULL;
+	}
+
+	ht->code_lengths = (uint8_t*)malloc(sizeof(uint8_t) * sym_count);
+	if (!ht->code_lengths) {
+		fprintf(stderr, "Failed to allocate memory while counting frequncies.\n");
+		free_hash_table(hash_table);
+		free(buffer);
+		pq_free(pq);
+		free_tree(ht);
+		return NULL;
+	}
+
+	ht->symbols = (uint8_t**)malloc(sizeof(uint8_t*) * sym_count);
+	if (!ht->symbols) {
+		fprintf(stderr, "Failed to allocate memory while counting frequncies.\n");
+		free_hash_table(hash_table);
+		free(buffer);
+		pq_free(pq);
+		free_tree(ht);
+		return NULL;
+	}
+
+	if (sym_count == 1) {
+		fread(buffer, 1, symbol_len, file);
+		ht->codes[0] = 0;
+		ht->code_lengths[0] = 1;
+		ht->symbols[0] = buffer;
+		ht->symbols_count = 1;
+		rewind(file);
+	} else {
+		encoding(ht);
+	}
 
 	free(buffer);
 	pq_free(pq);
@@ -180,7 +247,7 @@ int write_header_to_file(FILE* out, HuffmanTree* ht, uint64_t original_file_size
 
 int write_encoded_file_1b(FILE* input, FILE* output, HuffmanTree* ht) {
 
-	uint32_t* codes = (uint32_t*)malloc(sizeof(uint32_t) * 256);
+	uint32_t* codes = (uint32_t*)calloc(256, sizeof(uint32_t));
 	if (!codes) {
 		fprintf(stderr, "Failed to allocate memory while writing encoded file.\n");
 		return 1;
@@ -199,7 +266,7 @@ int write_encoded_file_1b(FILE* input, FILE* output, HuffmanTree* ht) {
 		return 1;
 	}
 
-	for (int i = 0; i < 256; i++) {
+	for (int i = 0; i < ht->symbols_count; i++) {
 		codes[ht->symbols[i][0]] = ht->codes[i];
 	}
 
@@ -247,9 +314,8 @@ int write_encoded_file_hash(FILE* input, FILE* output, HuffmanTree* ht) {
 	}
 
 	uint8_t* buffer = (uint8_t*)malloc(sizeof(uint8_t) * symbol_len);
-
 	if (!buffer) {
-		// Error
+		fprintf(stderr, "Failed to allocate memory while writing encoded file.\n");
 		return 1;
 	}
 
@@ -274,8 +340,9 @@ int write_encoded_file_hash(FILE* input, FILE* output, HuffmanTree* ht) {
 			bits_read++;
 			if (bits_read == 8) {
 				if (fwrite(&byte, 1, 1, output) != 1) {
-					// Error
-					// Free everything
+					fprintf(stderr, "Error writing encoded message.\n");
+					free(buffer);
+					free_hash_table(table);
 					return 1;
 				}
 				byte = 0;
@@ -284,7 +351,8 @@ int write_encoded_file_hash(FILE* input, FILE* output, HuffmanTree* ht) {
 		}
 	}
 
-	// Free everything
+	free(buffer);
+	free_hash_table(table);
 	return 0;
 }
 
@@ -299,26 +367,38 @@ int compress_file(FILE* input, FILE* output, uint8_t symbol_len, uint64_t origin
 	if (original_file_size == 0) {
 		tree = create_tree(NULL, symbol_len);
 	} else if (symbol_len == 1) {
-		HuffmanTree* tree = count_freq_1b(input);
+		tree = count_freq_1b(input);
 	} else {
-		HuffmanTree* tree = count_freq_hash(input, symbol_len);
+		tree = count_freq_hash(input, symbol_len);
 	}
 
-	if (write_header_to_file(output, tree, original_file_size) != 0) {
+	if (tree == NULL) {
+		fprintf(stderr, "Error assembling the Huffman tree.\n");
 		return 1;
 	}
 
-	if (original_file_size == 0) return 0;
+	if (write_header_to_file(output, tree, original_file_size) != 0) {
+		free_tree(tree);
+		return 1;
+	}
+
+	if (original_file_size == 0) {
+		free_tree(tree);
+		return 0;
+	}
 
 	if (symbol_len == 1) {
 		if (write_encoded_file_1b(input, output, tree) != 0) {
+			free_tree(tree);
 			return 1;
 		}
 	} else {
-		if (write_encoded_file(input, output, tree) != 0) {
+		if (write_encoded_file_hash(input, output, tree) != 0) {
+			free_tree(tree);
 			return 1;
 		}
 	}
 
+	free_tree(tree);
 	return 0;
 }

@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	if (!(strcmp(argv[1], "compress") || strcmp(argv[1], "decompress"))) {
+	if (strcmp(argv[1], "compress") && strcmp(argv[1], "decompress")) {
 		fprint_usage(argv[0]);
 		return 1;
 	}
@@ -51,9 +51,14 @@ int main(int argc, char** argv) {
 		}
 	}
 
-	if (strcmp(argv[1], "compress")) {
+	if (!strcmp(argv[1], "compress")) {
 		fseek(input, 0, SEEK_END);
-		uint64_t original_file_size = ftell(input);
+		int64_t orig_file_size = ftell(input);
+		if (orig_file_size == -1) {
+			fprintf(stderr, "Error using ftell.\n");
+			return 1;
+		}
+		uint64_t original_file_size = (uint64_t)orig_file_size;
 		rewind(input);
 		int compression_res = compress_file(input, output, symbol_len, original_file_size);
 		if (compression_res == 1) {

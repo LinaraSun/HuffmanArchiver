@@ -4,16 +4,16 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define MAX_SYMBOL_BYTES 4
-// #define INITIAL_PQ_CAPACITY 1024
 
-typedef struct {
+typedef struct Node {
 	uint8_t* symbol_data;
 	uint32_t frequency;
 	uint8_t symbol_length;
-	Node* right;
-	Node* left;
+	struct Node* right;
+	struct Node* left;
 } Node;
 
 typedef struct {
@@ -31,13 +31,13 @@ typedef struct {
 	uint8_t symbol_length;
 } HuffmanTree;
 
-typedef struct {
+typedef struct HashTableEntry {
 	uint8_t* symbol_data;
 	uint32_t frequency;
 	uint8_t symbol_len;
 	uint32_t code;
 	uint8_t code_len;
-	HashTableEntry* next;
+	struct HashTableEntry* next;
 } HashTableEntry;
 
 typedef struct {

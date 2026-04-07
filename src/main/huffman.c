@@ -28,7 +28,7 @@ Node* create_node(uint8_t* symbol, uint32_t freq, uint8_t symbol_len) {
 }
 
 void free_node(Node* node) {
-	if (!node) return NULL;
+	if (!node) return;
 	if (node->right) free_node(node->right);
 	if (node->left) free_node(node->left);
 	if (node->symbol_data) free(node->symbol_data);
@@ -72,7 +72,10 @@ void pq_push(PriorityQueue* pq, Node* node) {
 
 	if (pq->size + 1 > pq->capacity) {
 		pq->capacity *= 2;
-		pq->nodes = (Node**)realloc(sizeof(Node*) * pq->capacity);
+		if (realloc(pq->nodes, sizeof(Node*) * pq->capacity) == NULL) {
+			fprintf(stderr, "Error resizing priority queue.\n");
+			return;
+		}
 	}
 
 	pq->nodes[pq->size] = node;
@@ -127,7 +130,7 @@ Node* pq_merge(PriorityQueue* pq) {
 }
 
 void pq_free(PriorityQueue* pq) {
-	if (!pq) return NULL;
+	if (!pq) return;
 	free(pq->nodes);
 	free(pq);
 }
@@ -149,14 +152,15 @@ HuffmanTree* create_tree(Node* node, uint8_t symbol_len) {
 }
 
 void free_tree(HuffmanTree* ht) {
-	if (!ht) return NULL;
+	if (!ht) return;
 	if (ht->root) free_node(ht->root);
-	if (ht->codes) {
+	if (ht->codes) free(ht->codes);
+	/* if (ht->symbols)  {
 		for (int i = 0; i < ht->symbols_count; i++) {
-			if (ht->codes[i]) free(ht->codes[i]);
+			free(ht->symbols[i]);
 		}
-		free(ht->codes);
-	}
+		free(ht->symbols);
+	} */
 	if (ht->symbols) free(ht->symbols);
 	if (ht->code_lengths) free(ht->code_lengths);
 	free(ht);
