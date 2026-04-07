@@ -183,9 +183,12 @@ HashTable* create_hash_table(uint32_t capacity) {
 
 void free_hash_table(HashTable* table) {
 	if (!table) return;
-	if (table->buckets) free(table->buckets);
-	// Again, should I be worried here about the Individual entries?.. Yeah, I should
-	// So I write free_hash_entry function
+	if (table->buckets) {
+		for (int i = 0; i < table->capacity; i++) {
+			if (table->buckets[i]) free_hash_entry(table->buckets[i]);
+		}
+		free(table->buckets);
+	}
 	free(table);
 }
 
@@ -193,6 +196,7 @@ void free_hash_entry(HashTableEntry* entry) {
 	if (!entry) return;
 	if (entry->symbol_data) free(entry->symbol_data);
 	if (entry->next) free_hash_entry(entry->next);
+	free(entry);
 }
 
 uint32_t hash_function(uint8_t* symbol, uint8_t symbol_len, uint32_t table_size) {
@@ -217,10 +221,11 @@ void add_symbol_hash(HashTable* table, uint8_t* symbol, uint8_t symbol_len, uint
 
 	HashTableEntry* new_entry = (HashTableEntry*)malloc(sizeof(HashTableEntry));
 	if (!new_entry) {
-		// Error handling
+		fprintf(stderr, "Failed to allocate memory for a hash table entry.\n");
 		return;
 	}
-	new_entry->symbol_data = (uint8_t*)malloc(symbol_len);
+
+	new_entry->symbol_data = (uint8_t*)malloc(sizeof(uint8_t) * symbol_len);
 	memcpy(new_entry->symbol_data, symbol, symbol_len);
 	new_entry->frequency = 1;
 	new_entry->symbol_len = symbol_len;
