@@ -347,10 +347,17 @@ int write_encoded_file_hash(FILE* input, FILE* output, HuffmanTree* ht) {
 	while ((bytes_read = fread(buffer, 1, symbol_len, input)) == symbol_len) {
 		uint32_t hash_index = hash_function(buffer, symbol_len, table_size);
 		HashTableEntry* entry = table->buckets[hash_index];
+
 		while (entry && memcmp(entry->symbol_data, buffer, symbol_len) != 0) {
 			entry = entry->next;
 		}
-		// Check for NULL entry and NULL data in it?
+
+		if (!entry) {
+			fprintf(stderr, "Symbol not present in huffman tree.\n");
+			free(buffer);
+			return 1;
+		}
+		
 		uint32_t code = entry->code;
 		uint8_t code_len = entry->code_len;
 		while (code_len > 0) {
