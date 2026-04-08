@@ -253,9 +253,10 @@ int write_encoded_file_1b(FILE* input, FILE* output, HuffmanTree* ht) {
 		return 1;
 	}
 
-	uint8_t* code_lengths = (uint8_t*)malloc(sizeof(uint8_t) * 256);
+	uint8_t* code_lengths = (uint8_t*)calloc(256, sizeof(uint8_t));
 	if (!code_lengths) {
 		fprintf(stderr, "Failed to allocate memory while writing encoded file.\n");
+		free(codes);
 		return 1;
 	}
 
@@ -263,11 +264,14 @@ int write_encoded_file_1b(FILE* input, FILE* output, HuffmanTree* ht) {
 	uint8_t* buffer = (uint8_t*)malloc(sizeof(uint8_t));
 	if (!buffer) {
 		fprintf(stderr, "Failed to allocate memory while writing encoded file.\n");
+		free(codes);
+		free(code_lengths);
 		return 1;
 	}
 
 	for (int i = 0; i < ht->symbols_count; i++) {
 		codes[ht->symbols[i][0]] = ht->codes[i];
+		code_lengths[ht->symbols[i][0]] = ht->code_lengths[i];
 	}
 
 	uint8_t byte = 0;
@@ -291,6 +295,17 @@ int write_encoded_file_1b(FILE* input, FILE* output, HuffmanTree* ht) {
 				byte = 0;
 				bits_read = 0;
 			}
+		}
+	}
+
+	if (bits_read > 0) {
+		byte = byte << (8 - bits_read);
+		if (fwrite(&byte, 1, 1, output) != 1) {
+			fprintf(stderr, "Error writing encoded file.\n");
+			free(codes);
+			free(code_lengths);
+			free(buffer);
+			return 1;
 		}
 	}
 
@@ -332,6 +347,10 @@ int write_encoded_file_hash(FILE* input, FILE* output, HuffmanTree* ht) {
 	while ((bytes_read = fread(buffer, 1, symbol_len, input)) == symbol_len) {
 		uint32_t hash_index = hash_function(buffer, symbol_len, table_size);
 		HashTableEntry* entry = table->buckets[hash_index];
+		while (entry && memcmp(entry->symbol_data, buffer, symbol_len) != 0) {
+			entry = entry->next;
+		}
+		// Check for NULL entry and NULL data in it?
 		uint32_t code = entry->code;
 		uint8_t code_len = entry->code_len;
 		while (code_len > 0) {
@@ -348,6 +367,16 @@ int write_encoded_file_hash(FILE* input, FILE* output, HuffmanTree* ht) {
 				byte = 0;
 				bits_read = 0;
 			}
+		}
+	}
+
+	if (bits_read > 0) {
+		byte = byte << (8 - bits_read);
+		if (fwrite(&byte, 1, 1, output) != 1) {
+			fprintf(stderr, "Error writing encoded message.\n");
+			free(buffer);
+			free_hash_table(table);
+			return 1;
 		}
 	}
 

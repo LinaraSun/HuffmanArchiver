@@ -116,7 +116,7 @@ Node* pq_merge(PriorityQueue* pq) {
 		Node* node1 = pq_pop(pq);
 		Node* node2 = pq_pop(pq);
 		Node* res_node = create_node(NULL, node1->frequency + node2->frequency, node1->symbol_length);
-		if (node1->frequency < node2->frequency) {
+		if (node1->frequency <= node2->frequency) {
 			res_node->right = node1;
 			res_node->left = node2;
 		} else {
