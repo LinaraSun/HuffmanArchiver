@@ -191,7 +191,7 @@ void encoding_recursion(HuffmanTree* ht, Node* node, uint32_t code, uint8_t code
 		}
 
 		if (node->left) {
-			encoding_recursion(ht, node->left, code << 1 + 1, code_len + 1);
+			encoding_recursion(ht, node->left, (code << 1) | 1, code_len + 1);
 		}
 	}
 }
@@ -274,6 +274,8 @@ int write_encoded_file_1b(FILE* input, FILE* output, HuffmanTree* ht) {
 		code_lengths[ht->symbols[i][0]] = ht->code_lengths[i];
 	}
 
+	rewind(input);
+
 	uint8_t byte = 0;
 	uint8_t bits_read = 0;
 
@@ -340,6 +342,8 @@ int write_encoded_file_hash(FILE* input, FILE* output, HuffmanTree* ht) {
 	for (int i = 0; i < ht->symbols_count; i++) {
 		add_symbol_hash(table, ht->symbols[i], symbol_len, ht->codes[i], ht->code_lengths[i]);
 	}
+
+	rewind(input);
 
 	uint8_t byte = 0;
 	uint8_t bits_read = 0;
