@@ -129,7 +129,7 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 		}
 
 		memcpy(ht->symbols[ht->symbols_count], buffer_sym, symbol_size);
-		memcpy(ht->code_lengths[ht->symbols_count], buffer_code_len, 1);
+		ht->code_lengths[ht->symbols_count] = *buffer_code_len;
 		ht->symbols_count++;
 	}
 
@@ -144,6 +144,28 @@ void recovering_codes(HuffmanTree* ht) {
 	// How should I do this...
 	// Sort by length, then by order in the header, probably just by switching if strictly <
 	// Then assign codes
+	if (!ht || !ht->symbols || !ht->code_lengths) {
+		fprintf(stderr, "Invalid Huffman tree given to recover codes\n");
+		return;
+	}
+
+	uint32_t temp_len = 0;
+	uint8_t* temp_sym = NULL;
+
+	for (uint32_t i = 1; i < ht->symbols_count; i++) {
+		uint32_t j = i;
+		while (ht->code_lengths[j - 1] > ht->code_lengths[j]) {
+			temp_len = ht->code_lengths[j];
+			ht->code_lengths[j] = ht->code_lengths[j - 1];
+			ht->code_lengths[j - 1] = temp_len;
+
+			temp_sym = ht->symbols[j];
+			ht->symbols[j] = ht->symbols[j - 1];
+			ht->symbols[j - 1] = temp_sym;
+
+			j--;
+		}
+	}
 }
 
 int writing_decoded_file(FILE* out, HuffmanTree* ht, uint64_t original_file_size) {}
@@ -161,13 +183,11 @@ int decompress_file(FILE* input, FILE* output, uint8_t symbol_len) {
 	ht = read_header(input, original_file_size_ptr);
 
 	if (!ht) {
-		// There's been an error
 		free(original_file_size_ptr);
 		return 1;
 	}
 
 	if (!ht->symbols) {
-		// Orig file was empty, so our work here is done, if the destination file is empty. Otherwise we may need to clean it of its contents
 		free(original_file_size_ptr);
 		free_tree(ht);
 		return 0;

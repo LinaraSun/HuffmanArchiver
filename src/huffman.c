@@ -87,6 +87,30 @@ void pq_push(PriorityQueue* pq, Node* node) {
 		pq->nodes[current_index - 1] = node;
 		current_index--;
 	}
+
+	while (current_index >= 1 && pq->nodes[current_index - 1]->frequency == node->frequency) {
+		if (node->symbol_data && pq->nodes[current_index - 1]->symbol_data && compare_symbols(pq->nodes[current_index - 1]->symbol_data, node->symbol_data, node->symbol_length) < 0) {
+			pq->nodes[current_index] = pq->nodes[current_index - 1];
+			pq->nodes[current_index - 1] = node;
+			current_index--;
+		} else if (node->symbol_data && pq->nodes[current_index - 1]->symbol_data) {
+			break;
+		} else if (node->symbol_data && !pq->nodes[current_index - 1]->symbol_data) {
+			break;
+		} else if (!node->symbol_data && pq->nodes[current_index - 1]->symbol_data) {
+			pq->nodes[current_index] = pq->nodes[current_index - 1];
+			pq->nodes[current_index - 1] = node;
+			current_index--;
+		} else {
+			if (compare_symbols(min_symbol(node), min_symbol(pq->nodes[current_index - 1]), node->symbol_length) < 0) {
+				break;
+			} else {
+				pq->nodes[current_index] = pq->nodes[current_index - 1];
+				pq->nodes[current_index - 1] = node;
+				current_index--;
+			}
+		}
+	}
 }
 
 Node* pq_pop(PriorityQueue* pq) {
@@ -116,13 +140,8 @@ Node* pq_merge(PriorityQueue* pq) {
 		Node* node1 = pq_pop(pq);
 		Node* node2 = pq_pop(pq);
 		Node* res_node = create_node(NULL, node1->frequency + node2->frequency, node1->symbol_length);
-		if (node1->frequency <= node2->frequency) {
-			res_node->right = node1;
-			res_node->left = node2;
-		} else {
-			res_node->right = node2;
-			res_node->left = node1;
-		}
+		res_node->right = node1;
+		res_node->left = node2;
 		pq_push(pq, res_node);
 	}
 
@@ -242,4 +261,12 @@ void add_symbol_hash(HashTable* table, uint8_t* symbol, uint8_t symbol_len, uint
 
 int compare_symbols(uint8_t* symbol1, uint8_t* symbol2, uint8_t symbol_len) {
 	return memcmp(symbol1, symbol2, symbol_len);
+}
+
+uint8_t* min_symbol(Node* node) {
+	if (node->symbol_data) {
+		return node->symbol_data;
+	} else {
+		return min_symbol(node->right);
+	}
 }
