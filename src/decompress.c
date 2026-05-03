@@ -113,9 +113,14 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 
 	HuffmanTree* ht = create_tree(NULL, symbol_size);
 
-	ht->codes = (uint32_t*)malloc(sizeof(uint32_t) * symbols_count);
-	ht->symbols = (uint8_t**)malloc(sizeof(uint8_t*) * symbols_count);
-	ht->code_lengths = (uint8_t*)malloc(sizeof(uint8_t) * symbols_count);
+	ht->codes = (uint32_t*)calloc(symbols_count, sizeof(uint32_t));
+	if (!ht->codes) {}
+
+	ht->symbols = (uint8_t**)calloc(symbols_count, sizeof(uint8_t*));
+	if (!ht->symbols) {}
+
+	ht->code_lengths = (uint8_t*)calloc(symbols_count, sizeof(uint8_t));
+	if (!ht->code_lengths) {}
 
 	for (uint32_t i = 0; i < symbols_count; i++) {
 		if (fread(buffer_sym, symbol_size, 1, file) != 1) {
@@ -154,7 +159,7 @@ void recovering_codes(HuffmanTree* ht) {
 
 	for (uint32_t i = 1; i < ht->symbols_count; i++) {
 		uint32_t j = i;
-		while (ht->code_lengths[j - 1] > ht->code_lengths[j]) {
+		while (j >= 1 && ht->code_lengths[j - 1] > ht->code_lengths[j]) {
 			temp_len = ht->code_lengths[j];
 			ht->code_lengths[j] = ht->code_lengths[j - 1];
 			ht->code_lengths[j - 1] = temp_len;
@@ -166,9 +171,28 @@ void recovering_codes(HuffmanTree* ht) {
 			j--;
 		}
 	}
+
+	uint32_t code = 0;
+	uint8_t current_len = 1;
+
+	for (uint32_t i = 0; i < ht->symbols_count; i++) {
+		if (current_len < ht->code_lengths[i]) {
+			code = code << (ht->code_lengths[i] - current_len);
+			current_len = ht->code_lengths[i];
+		}
+
+		ht->codes[i] = code;
+
+		code++;
+	}
 }
 
-int writing_decoded_file(FILE* out, HuffmanTree* ht, uint64_t original_file_size) {}
+int writing_decoded_file(FILE* out, HuffmanTree* ht, uint64_t original_file_size) {
+
+	uint64_t bytes_written = 0;
+
+	while (bytes_written < original_file_size) {}
+}
 
 int decompress_file(FILE* input, FILE* output, uint8_t symbol_len) {
 

@@ -102,7 +102,7 @@ void pq_push(PriorityQueue* pq, Node* node) {
 			pq->nodes[current_index - 1] = node;
 			current_index--;
 		} else {
-			if (compare_symbols(min_symbol(node), min_symbol(pq->nodes[current_index - 1]), node->symbol_length) < 0) {
+			if (height_left(node) <= height_left(pq->nodes[current_index - 1])) {
 				break;
 			} else {
 				pq->nodes[current_index] = pq->nodes[current_index - 1];
@@ -137,11 +137,26 @@ Node* pq_merge(PriorityQueue* pq) {
 	}
 
 	while (pq->size > 1) {
+		for (int i = 0; i < pq->size; i++) {
+			printf("%d\n", pq->nodes[i]->frequency);
+		}
+		printf("next cycle\n");
 		Node* node1 = pq_pop(pq);
 		Node* node2 = pq_pop(pq);
 		Node* res_node = create_node(NULL, node1->frequency + node2->frequency, node1->symbol_length);
-		res_node->right = node1;
-		res_node->left = node2;
+		if ((node1->symbol_data && node2->symbol_data) || (node1->symbol_data && !node2->symbol_data)) {
+			res_node->right = node1;
+			res_node->left = node2;
+		} else if (!node1->symbol_data && node2->symbol_data) {
+			res_node->right = node2;
+			res_node->left = node1;
+		} else if (height_left(node1) > height_left(node2)) {
+			res_node->right = node2;
+			res_node->left = node1;
+		} else {
+			res_node->right = node1;
+			res_node->left = node2;
+		}
 		pq_push(pq, res_node);
 	}
 
@@ -268,5 +283,13 @@ uint8_t* min_symbol(Node* node) {
 		return node->symbol_data;
 	} else {
 		return min_symbol(node->right);
+	}
+}
+
+int height_left(Node* node) {
+	if (node->symbol_data) {
+		return 1;
+	} else {
+		return height_left(node->left) + 1;
 	}
 }
