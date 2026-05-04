@@ -46,6 +46,11 @@ typedef struct {
 	uint32_t capacity;
 } HashTable;
 
+typedef struct {
+	uint8_t* symbol;
+	uint8_t code_len;
+} HashDecodeEntry;
+
 Node* create_node(uint8_t* symbol, uint32_t freq, uint8_t symbol_len);
 void free_node(Node* node);
 uint8_t node_is_leaf(Node* node);
@@ -64,6 +69,7 @@ void free_hash_table(HashTable* table);
 void free_hash_entry(HashTableEntry* entry);
 uint32_t hash_function(uint8_t* symbol, uint8_t symbol_len, uint32_t table_size);
 void add_symbol_hash(HashTable* table, uint8_t* symbol, uint8_t symbol_len, uint32_t code, uint8_t code_len);
+
 int compare_symbols(uint8_t* symbol1, uint8_t* symbol2, uint8_t symbol_len);
 uint8_t* min_symbol(Node* node);
 int height_left(Node* node);
@@ -80,5 +86,5 @@ int write_encoded_file_hash(FILE* input, FILE* output, HuffmanTree* ht);
 int decompress_file(FILE* input, FILE* output, uint8_t symbol_len);
 HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr);
 void recovering_codes(HuffmanTree* ht);
-int writing_decoded_file(FILE* out, HuffmanTree* ht, uint64_t original_file_size);
+int writing_decoded_file(FILE* in, FILE* out, HuffmanTree* ht, uint64_t original_file_size);
 #endif

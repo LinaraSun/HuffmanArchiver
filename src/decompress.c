@@ -1,5 +1,8 @@
 #include "huffman.h"
 
+#define TABLE_BITS 12
+#define TABLE_SIZE (1 << TABLE_BITS)
+
 HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 
 	uint8_t* buffer_4b = (uint8_t*)malloc(sizeof(uint8_t) * 4);
@@ -119,6 +122,14 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 	ht->symbols = (uint8_t**)calloc(symbols_count, sizeof(uint8_t*));
 	if (!ht->symbols) {}
 
+	for (int i = 0; i < symbols_count; i++) {
+		ht->symbols[i] = (uint8_t*)calloc(symbol_size, sizeof(uint8_t));
+		if (!ht->symbols[i]) {
+			// Error
+			return NULL;
+		}
+	}
+
 	ht->code_lengths = (uint8_t*)calloc(symbols_count, sizeof(uint8_t));
 	if (!ht->code_lengths) {}
 
@@ -139,9 +150,6 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 	}
 
 	recovering_codes(ht);
-
-	free(buffer_4b);
-	free(buffer_1b);
 	return ht;
 }
 
@@ -187,11 +195,57 @@ void recovering_codes(HuffmanTree* ht) {
 	}
 }
 
-int writing_decoded_file(FILE* out, HuffmanTree* ht, uint64_t original_file_size) {
+int writing_decoded_file(FILE* in, FILE* out, HuffmanTree* ht, uint64_t original_file_size) {
 
+	// Need to figure out the hashing for this
+	HashDecodeEntry* table = (HashDecodeEntry*)calloc(TABLE_SIZE, sizeof(HashDecodeEntry));
+	for (uint32_t i = 0; i < ht->symbols_count; i++) {
+		uint32_t base_index = ht->codes[i] << (TABLE_BITS - ht->code_lengths[i]);
+		for (uint32_t j = base_index; j <= base_index + ((1 << (TABLE_BITS - ht->code_lengths[i])) - 1); j++) {
+			table[j].symbol = ht->symbols[i];
+			table[j].code_len = ht->code_lengths[i];
+		}
+	}
+
+	uint32_t bit_buffer = 0;
+	uint8_t bits_in_buffer = 0;
+
+	uint8_t byte_read = 0;
 	uint64_t bytes_written = 0;
 
-	while (bytes_written < original_file_size) {}
+	uint32_t index = 0;
+
+	while (bytes_written < original_file_size) {
+		while (bits_in_buffer < 12 && (fread(&byte_read, 1, 1, in) == 1)) {
+			bit_buffer = (bit_buffer << 8) | (uint32_t)byte_read;
+			bits_in_buffer += 8;
+		}
+
+		if (bits_in_buffer > 12) {
+			index = (bit_buffer >> (bits_in_buffer - TABLE_BITS));
+		} else if (bits_in_buffer == 12) {
+			index = bit_buffer;
+		} else if (bits_in_buffer > 0) {
+			index = (bit_buffer << (TABLE_BITS - bits_in_buffer));
+		}
+		HashDecodeEntry* entry = &(table[index]);
+
+
+		if (fwrite(entry->symbol, ht->symbol_length, 1, out) != 1) {
+			// Error
+			return 1;
+		}
+
+		bytes_written += ht->symbol_length;
+
+		for (int i = 32 - bits_in_buffer; i < 32 - bits_in_buffer + entry->code_len; i++) {
+			bit_buffer ^= (1 << (31 - i));
+		}
+		bits_in_buffer -= entry->code_len;
+	}
+
+	free(table);
+	return 0;
 }
 
 int decompress_file(FILE* input, FILE* output, uint8_t symbol_len) {
@@ -215,6 +269,13 @@ int decompress_file(FILE* input, FILE* output, uint8_t symbol_len) {
 		free(original_file_size_ptr);
 		free_tree(ht);
 		return 0;
+	}
+
+	int writing_result = writing_decoded_file(input, output, ht, *original_file_size_ptr);
+	if (writing_result == 1) {
+		free(original_file_size_ptr);
+		free_tree(ht);
+		return 1;
 	}
 
 	free(original_file_size_ptr);
