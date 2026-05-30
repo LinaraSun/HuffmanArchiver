@@ -144,19 +144,19 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 			return NULL;
 		}
 
-		memcpy(ht->symbols[ht->symbols_count], buffer_sym, symbol_size);
+		memcpy(ht->symbols[ht->symbols_count], buffer_sym, symbol_size);		
 		ht->code_lengths[ht->symbols_count] = *buffer_code_len;
 		ht->symbols_count++;
 	}
 
+	if (buffer_sym != NULL) free(buffer_sym);
+	if (buffer_code_len != NULL) free(buffer_code_len);
 	recovering_codes(ht);
 	return ht;
 }
 
 void recovering_codes(HuffmanTree* ht) {
-	// How should I do this...
-	// Sort by length, then by order in the header, probably just by switching if strictly <
-	// Then assign codes
+	
 	if (!ht || !ht->symbols || !ht->code_lengths) {
 		fprintf(stderr, "Invalid Huffman tree given to recover codes\n");
 		return;
@@ -197,7 +197,6 @@ void recovering_codes(HuffmanTree* ht) {
 
 int writing_decoded_file(FILE* in, FILE* out, HuffmanTree* ht, uint64_t original_file_size) {
 
-	// Need to figure out the hashing for this
 	HashDecodeEntry* table = (HashDecodeEntry*)calloc(TABLE_SIZE, sizeof(HashDecodeEntry));
 	for (uint32_t i = 0; i < ht->symbols_count; i++) {
 		uint32_t base_index = ht->codes[i] << (TABLE_BITS - ht->code_lengths[i]);
@@ -230,18 +229,26 @@ int writing_decoded_file(FILE* in, FILE* out, HuffmanTree* ht, uint64_t original
 		}
 		HashDecodeEntry* entry = &(table[index]);
 
+		if (!entry) {
+			fprintf(stderr, "Empty entry.\n");
+			return 1;
+		}
 
-		if (fwrite(entry->symbol, ht->symbol_length, 1, out) != 1) {
+		if (index >= TABLE_SIZE) {
+			fprintf(stderr, "Index out of bounds.\n");
+			if (table) free(table);
+			return 1;
+		}
+
+		if (fwrite(entry->symbol, 1, ht->symbol_length, out) != ht->symbol_length) {
 			// Error
 			return 1;
 		}
 
 		bytes_written += ht->symbol_length;
 
-		for (int i = 32 - bits_in_buffer; i < 32 - bits_in_buffer + entry->code_len; i++) {
-			bit_buffer ^= (1 << (31 - i));
-		}
 		bits_in_buffer -= entry->code_len;
+		bit_buffer &= (1u << bits_in_buffer) - 1;
 	}
 
 	free(table);

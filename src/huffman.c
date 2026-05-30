@@ -31,7 +31,6 @@ void free_node(Node* node) {
 	if (!node) return;
 	if (node->right) free_node(node->right);
 	if (node->left) free_node(node->left);
-	if (node->symbol_data) free(node->symbol_data);
 	free(node);
 }
 
@@ -137,10 +136,6 @@ Node* pq_merge(PriorityQueue* pq) {
 	}
 
 	while (pq->size > 1) {
-		for (int i = 0; i < pq->size; i++) {
-			printf("%d\n", pq->nodes[i]->frequency);
-		}
-		printf("next cycle\n");
 		Node* node1 = pq_pop(pq);
 		Node* node2 = pq_pop(pq);
 		Node* res_node = create_node(NULL, node1->frequency + node2->frequency, node1->symbol_length);
@@ -189,13 +184,13 @@ void free_tree(HuffmanTree* ht) {
 	if (!ht) return;
 	if (ht->root) free_node(ht->root);
 	if (ht->codes) free(ht->codes);
-	/* if (ht->symbols)  {
+	if (ht->symbols)  {
 		for (int i = 0; i < ht->symbols_count; i++) {
-			free(ht->symbols[i]);
+			if (ht->symbols[i]) free(ht->symbols[i]);
 		}
 		free(ht->symbols);
-	} */
-	if (ht->symbols) free(ht->symbols);
+	}
+	// if (ht->symbols) free(ht->symbols);
 	if (ht->code_lengths) free(ht->code_lengths);
 	free(ht);
 }
