@@ -88,7 +88,7 @@ void pq_push(PriorityQueue* pq, Node* node) {
 	}
 
 	while (current_index >= 1 && pq->nodes[current_index - 1]->frequency == node->frequency) {
-		if (node->symbol_data && pq->nodes[current_index - 1]->symbol_data && compare_symbols(pq->nodes[current_index - 1]->symbol_data, node->symbol_data, node->symbol_length) < 0) {
+		if (node->symbol_data && pq->nodes[current_index - 1]->symbol_data && compare_symbols(pq->nodes[current_index - 1]->symbol_data, node->symbol_data, node->symbol_length) > 0) {
 			pq->nodes[current_index] = pq->nodes[current_index - 1];
 			pq->nodes[current_index - 1] = node;
 			current_index--;
@@ -110,6 +110,16 @@ void pq_push(PriorityQueue* pq, Node* node) {
 			}
 		}
 	}
+
+	/* printf("PQ:\n");
+	for (int i = 0; i < pq->size; i++) {
+		if (pq->nodes[i]->symbol_data) {
+			printf("%c: freq=%u\n", pq->nodes[i]->symbol_data[0], pq->nodes[i]->frequency);
+		} else {
+			printf("Internal node: freq=%u\n", pq->nodes[i]->frequency);
+		}
+	}
+	printf("Round over.\n\n"); */
 }
 
 Node* pq_pop(PriorityQueue* pq) {

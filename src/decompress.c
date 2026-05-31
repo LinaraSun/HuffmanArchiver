@@ -156,7 +156,7 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 }
 
 void recovering_codes(HuffmanTree* ht) {
-	
+
 	if (!ht || !ht->symbols || !ht->code_lengths) {
 		fprintf(stderr, "Invalid Huffman tree given to recover codes\n");
 		return;
@@ -167,7 +167,8 @@ void recovering_codes(HuffmanTree* ht) {
 
 	for (uint32_t i = 1; i < ht->symbols_count; i++) {
 		uint32_t j = i;
-		while (j >= 1 && ht->code_lengths[j - 1] > ht->code_lengths[j]) {
+		while (j >= 1 && ((ht->code_lengths[j - 1] > ht->code_lengths[j]) || 
+		(ht->code_lengths[j - 1] == ht->code_lengths[j] && compare_symbols(ht->symbols[j - 1], ht->symbols[j], ht->symbol_length) > 0))) {
 			temp_len = ht->code_lengths[j];
 			ht->code_lengths[j] = ht->code_lengths[j - 1];
 			ht->code_lengths[j - 1] = temp_len;
@@ -193,6 +194,13 @@ void recovering_codes(HuffmanTree* ht) {
 
 		code++;
 	}
+
+	/* for (int i = 0; i < ht->symbols_count; i++) {
+    		printf("%c: code=%u len=%u\n",
+           	ht->symbols[i][0],
+           	ht->codes[i],
+           	ht->code_lengths[i]);
+	} */
 }
 
 int writing_decoded_file(FILE* in, FILE* out, HuffmanTree* ht, uint64_t original_file_size) {
@@ -207,7 +215,7 @@ int writing_decoded_file(FILE* in, FILE* out, HuffmanTree* ht, uint64_t original
 	}
 
 	uint32_t bit_buffer = 0;
-	uint8_t bits_in_buffer = 0;
+	int8_t bits_in_buffer = 0;
 
 	uint8_t byte_read = 0;
 	uint64_t bytes_written = 0;
@@ -227,18 +235,14 @@ int writing_decoded_file(FILE* in, FILE* out, HuffmanTree* ht, uint64_t original
 		} else if (bits_in_buffer > 0) {
 			index = (bit_buffer << (TABLE_BITS - bits_in_buffer));
 		}
-		HashDecodeEntry* entry = &(table[index]);
-
-		if (!entry) {
-			fprintf(stderr, "Empty entry.\n");
-			return 1;
-		}
 
 		if (index >= TABLE_SIZE) {
 			fprintf(stderr, "Index out of bounds.\n");
 			if (table) free(table);
 			return 1;
 		}
+
+		HashDecodeEntry* entry = &(table[index]);
 
 		if (fwrite(entry->symbol, 1, ht->symbol_length, out) != ht->symbol_length) {
 			// Error
@@ -247,8 +251,27 @@ int writing_decoded_file(FILE* in, FILE* out, HuffmanTree* ht, uint64_t original
 
 		bytes_written += ht->symbol_length;
 
+		if (entry->code_len > bits_in_buffer) {
+    			fprintf(stderr,
+            			"Need %u bits, have %u\n",
+            			(unsigned)entry->code_len,
+           			(unsigned)bits_in_buffer);
+
+    			fprintf(stderr,
+            			"index=%u bit_buffer=0x%08x\n",
+            			index,
+            			bit_buffer);
+			free(table);
+    			return 1;
+		}
+
 		bits_in_buffer -= entry->code_len;
-		bit_buffer &= (1u << bits_in_buffer) - 1;
+		if (bits_in_buffer  < 0) {
+			// Error
+			free(table);
+			return 1;
+		}
+		bit_buffer &= ((uint32_t)1 << bits_in_buffer) - 1;
 	}
 
 	free(table);

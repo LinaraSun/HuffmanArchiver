@@ -72,7 +72,9 @@ HuffmanTree* count_freq_1b(FILE* file) {
 		ht->symbols_count = 1;
 		rewind(file);
 	} else {
-		encoding(ht);
+		// encoding(ht);
+		counting_code_lengths(ht, ht->root);
+		encoding_from_len(ht);
 	}
 
 	free(freq);
@@ -166,7 +168,8 @@ HuffmanTree* count_freq_hash(FILE* file, uint8_t symbol_len) {
 		ht->symbols_count = 1;
 		rewind(file);
 	} else {
-		encoding(ht);
+		counting_code_lengths(ht, ht->root);
+		encoding_from_len(ht);
 	}
 
 	free(buffer);
@@ -175,24 +178,58 @@ HuffmanTree* count_freq_hash(FILE* file, uint8_t symbol_len) {
 	return ht;
 }
 
-void encoding(HuffmanTree* ht) {
-	encoding_recursion(ht, ht->root, 0, 0);
+void counting_code_lengths(HuffmanTree* ht, Node* root) {
+	counting_len_recursion(ht, root, 0);
 }
 
-void encoding_recursion(HuffmanTree* ht, Node* node, uint32_t code, uint8_t code_len) {
+void counting_len_recursion(HuffmanTree* ht, Node* node, uint8_t code_len) {
 	if (node_is_leaf(node)) {
-		ht->codes[ht->symbols_count] = code;
-		ht->symbols[ht->symbols_count] = node->symbol_data;
 		ht->code_lengths[ht->symbols_count] = code_len;
+		ht->symbols[ht->symbols_count] = node->symbol_data;
 		ht->symbols_count++;
 	} else {
 		if (node->right) {
-			encoding_recursion(ht, node->right, code << 1, code_len + 1);
+			counting_len_recursion(ht, node->right, code_len + 1);
 		}
 
 		if (node->left) {
-			encoding_recursion(ht, node->left, (code << 1) | 1, code_len + 1);
+			counting_len_recursion(ht, node->left, code_len + 1);
 		}
+	}
+}
+
+void encoding_from_len(HuffmanTree* ht) {
+
+	uint8_t temp_len = 0;
+	uint8_t* temp_sym = NULL;
+	for (uint32_t i = 1; i < ht->symbols_count; i++) {
+		uint32_t j = i;
+		while (j >= 1 && ((ht->code_lengths[j - 1] > ht->code_lengths[j]) || 
+		(ht->code_lengths[j - 1] == ht->code_lengths[j] && compare_symbols(ht->symbols[j - 1], ht->symbols[j], ht->symbol_length) > 0))) {
+			temp_len = ht->code_lengths[j];
+			ht->code_lengths[j] = ht->code_lengths[j - 1];
+			ht->code_lengths[j - 1] = temp_len;
+
+			temp_sym = ht->symbols[j];
+			ht->symbols[j] = ht->symbols[j - 1];
+			ht->symbols[j - 1] = temp_sym;
+
+			j--;
+		}
+	}
+
+	uint32_t code = 0;
+	uint8_t current_len = 1;
+
+	for (uint32_t i = 0; i < ht->symbols_count; i++) {
+		if (current_len < ht->code_lengths[i]) {
+			code = code << (ht->code_lengths[i] - current_len);
+			current_len = ht->code_lengths[i];
+		}
+
+		ht->codes[i] = code;
+
+		code++;
 	}
 }
 
@@ -438,6 +475,13 @@ int compress_file(FILE* input, FILE* output, uint8_t symbol_len, uint64_t origin
 			return 1;
 		}
 	}
+
+	/* for (int i = 0; i < tree->symbols_count; i++) {
+    		printf("%c: code=%u len=%u\n",
+           	tree->symbols[i][0],
+           	tree->codes[i],
+           	tree->code_lengths[i]);
+	} */
 
 	free_tree(tree);
 	return 0;

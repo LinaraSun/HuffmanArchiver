@@ -77,8 +77,11 @@ int height_left(Node* node);
 int compress_file(FILE* input, FILE* output, uint8_t symbol_len, uint64_t original_file_size);
 HuffmanTree* count_freq_1b(FILE* file);
 HuffmanTree* count_freq_hash(FILE* file, uint8_t symbol_len);
-void encoding(HuffmanTree* ht);
-void encoding_recursion(HuffmanTree* ht, Node* node, uint32_t code, uint8_t code_len);
+/* void encoding(HuffmanTree* ht);
+void encoding_recursion(HuffmanTree* ht, Node* node, uint32_t code, uint8_t code_len); */
+void counting_code_lengths(HuffmanTree* ht, Node* root);
+void counting_len_recursion(HuffmanTree* ht, Node* node, uint8_t code_len);
+void encoding_from_len(HuffmanTree* ht);
 int write_header_to_file(FILE* out, HuffmanTree* ht, uint64_t original_file_size);
 int write_encoded_file_1b(FILE* input, FILE* output, HuffmanTree* ht);
 int write_encoded_file_hash(FILE* input, FILE* output, HuffmanTree* ht);
