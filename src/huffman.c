@@ -200,7 +200,6 @@ void free_tree(HuffmanTree* ht) {
 		}
 		free(ht->symbols);
 	}
-	// if (ht->symbols) free(ht->symbols);
 	if (ht->code_lengths) free(ht->code_lengths);
 	free(ht);
 }

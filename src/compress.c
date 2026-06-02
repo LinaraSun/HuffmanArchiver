@@ -68,11 +68,10 @@ HuffmanTree* count_freq_1b(FILE* file) {
 		fread(byte, 1, 1, file);
 		ht->codes[0] = 0;
 		ht->code_lengths[0] = 1;
-		ht->symbols[0] = byte;
+		ht->symbols[0] = ht->root->symbol_data;
 		ht->symbols_count = 1;
 		rewind(file);
 	} else {
-		// encoding(ht);
 		counting_code_lengths(ht, ht->root);
 		encoding_from_len(ht);
 	}
@@ -164,7 +163,7 @@ HuffmanTree* count_freq_hash(FILE* file, uint8_t symbol_len) {
 		fread(buffer, 1, symbol_len, file);
 		ht->codes[0] = 0;
 		ht->code_lengths[0] = 1;
-		ht->symbols[0] = buffer;
+		ht->symbols[0] = ht->root->symbol_data;
 		ht->symbols_count = 1;
 		rewind(file);
 	} else {
@@ -449,7 +448,7 @@ int compress_file(FILE* input, FILE* output, uint8_t symbol_len, uint64_t origin
 		tree = count_freq_hash(input, symbol_len);
 	}
 
-	if (tree == NULL) {
+	if (!tree) {
 		fprintf(stderr, "Error assembling the Huffman tree.\n");
 		return 1;
 	}

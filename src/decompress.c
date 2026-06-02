@@ -69,8 +69,10 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 
 	uint64_t original_file_size = *original_file_size_ptr;
 	if (original_file_size == 0) {
-		if (fread(buffer_4b, 1, 4, file) != 4) {
-			fprintf(stderr, "Invalid file format.\n");
+		/* if (fread(buffer_4b, 1, 4, file) != 4) {
+			fprintf(stderr, "Invalid file format eee.\n");
+			free(buffer_4b);
+			free(buffer_1b);
 			return NULL;
 		}
 
@@ -78,8 +80,10 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 
 		if (symbols_count != 0) {
 			fprintf(stderr, "Invalid header.\n");
+			free(buffer_4b);
+			free(buffer_1b);
 			return NULL;
-		}
+		} */
 
 		free(buffer_4b);
 		free(buffer_1b);
@@ -88,6 +92,8 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 
 	if (fread(buffer_4b, 1, 4, file) != 4) {
 		fprintf(stderr, "Invalid file format.\n");
+		free(buffer_4b);
+		free(buffer_1b);
 		return NULL;
 	}
 
@@ -95,6 +101,8 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 
 	if (symbols_count == 0) {
 		fprintf(stderr, "Invalid header.\n");
+		free(buffer_4b);
+		free(buffer_1b);
 		return NULL;
 	}
 
