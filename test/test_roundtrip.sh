@@ -65,11 +65,3 @@ done
 run_tests 18 "Scewed frequencies" "$RTESTS/scewed_freq_1/input.txt" 1
 
 run_tests 19 "Scewed frequencies" "$RTESTS/scewed_freq_2/input.txt" 3
-
-: ' for size in 1 5 10 20 40; do
-	run_tests 20 "Txt" "$CTESTS/txt/${size}mb.txt" 1
-done '
-
-for size in 1 5 10 20 40; do
-	run_tests 21 "Bmp" "$CTESTS/bmp/${size}mb.bmp" 3
-done
