@@ -475,13 +475,6 @@ int compress_file(FILE* input, FILE* output, uint8_t symbol_len, uint64_t origin
 		}
 	}
 
-	/* for (int i = 0; i < tree->symbols_count; i++) {
-    		printf("%c: code=%u len=%u\n",
-           	tree->symbols[i][0],
-           	tree->codes[i],
-           	tree->code_lengths[i]);
-	} */
-
 	free_tree(tree);
 	return 0;
 }

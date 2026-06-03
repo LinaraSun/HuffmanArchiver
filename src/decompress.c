@@ -12,13 +12,13 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 	}
 
 	if (fread(buffer_4b, 1, 4, file) != 4) {
-		fprintf(stderr, "Invalid file format.\n");
+		fprintf(stderr, "Invalid file format - no bytes to read magic word from.\n");
 		free(buffer_4b);
 		return NULL;
 	}
 
 	if (memcmp("HUFF", buffer_4b, 4) != 0) {
-		fprintf(stderr, "Invalid file format.\n");
+		fprintf(stderr, "Invalid file format - incorrect magic word.\n");
 		free(buffer_4b);
 		return NULL;
 	}
@@ -31,7 +31,7 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 	}
 
 	if (fread(buffer_1b, 1, 1, file) != 1) {
-		fprintf(stderr, "Invalid file format.\n");
+		fprintf(stderr, "Invalid file format - no bytes past magic word.\n");
 		free(buffer_4b);
 		free(buffer_1b);
 		return NULL;
@@ -69,22 +69,6 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 
 	uint64_t original_file_size = *original_file_size_ptr;
 	if (original_file_size == 0) {
-		/* if (fread(buffer_4b, 1, 4, file) != 4) {
-			fprintf(stderr, "Invalid file format eee.\n");
-			free(buffer_4b);
-			free(buffer_1b);
-			return NULL;
-		}
-
-		uint32_t symbols_count = *buffer_4b;
-
-		if (symbols_count != 0) {
-			fprintf(stderr, "Invalid header.\n");
-			free(buffer_4b);
-			free(buffer_1b);
-			return NULL;
-		} */
-
 		free(buffer_4b);
 		free(buffer_1b);
 		return create_tree(NULL, 1);
@@ -97,10 +81,12 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 		return NULL;
 	}
 
-	uint32_t symbols_count = *buffer_4b;
+	// uint32_t symbols_count = *buffer_4b;
+	uint32_t symbols_count = 0;
+	memcpy(&symbols_count, buffer_4b, sizeof(uint32_t));
 
 	if (symbols_count == 0) {
-		fprintf(stderr, "Invalid header.\n");
+		fprintf(stderr, "Invalid header - original file size greater than zero but zero symbols.\n");
 		free(buffer_4b);
 		free(buffer_1b);
 		return NULL;
@@ -202,13 +188,6 @@ void recovering_codes(HuffmanTree* ht) {
 
 		code++;
 	}
-
-	/* for (int i = 0; i < ht->symbols_count; i++) {
-    		printf("%c: code=%u len=%u\n",
-           	ht->symbols[i][0],
-           	ht->codes[i],
-           	ht->code_lengths[i]);
-	} */
 }
 
 int writing_decoded_file(FILE* in, FILE* out, HuffmanTree* ht, uint64_t original_file_size) {

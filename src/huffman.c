@@ -110,16 +110,6 @@ void pq_push(PriorityQueue* pq, Node* node) {
 			}
 		}
 	}
-
-	/* printf("PQ:\n");
-	for (int i = 0; i < pq->size; i++) {
-		if (pq->nodes[i]->symbol_data) {
-			printf("%c: freq=%u\n", pq->nodes[i]->symbol_data[0], pq->nodes[i]->frequency);
-		} else {
-			printf("Internal node: freq=%u\n", pq->nodes[i]->frequency);
-		}
-	}
-	printf("Round over.\n\n"); */
 }
 
 Node* pq_pop(PriorityQueue* pq) {
