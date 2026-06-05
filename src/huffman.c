@@ -118,6 +118,8 @@ Node* pq_pop(PriorityQueue* pq) {
 		return NULL;
 	}
 
+	if (pq->size == 0) return NULL;
+
 	if (!pq->nodes[pq->size - 1]) {
 		fprintf(stderr, "Invalid node at the end of priority queue passed to pq_pop.\n");
 		return NULL;
@@ -160,7 +162,7 @@ Node* pq_merge(PriorityQueue* pq) {
 
 void pq_free(PriorityQueue* pq) {
 	if (!pq) return;
-	free(pq->nodes);
+	if (pq->nodes) free(pq->nodes);
 	free(pq);
 }
 
@@ -185,7 +187,7 @@ void free_tree(HuffmanTree* ht) {
 	if (ht->root) free_node(ht->root);
 	if (ht->codes) free(ht->codes);
 	if (ht->symbols)  {
-		for (int i = 0; i < ht->symbols_count; i++) {
+		for (uint32_t i = 0; i < ht->symbols_count; i++) {
 			if (ht->symbols[i]) free(ht->symbols[i]);
 		}
 		free(ht->symbols);
@@ -216,7 +218,7 @@ HashTable* create_hash_table(uint32_t capacity) {
 void free_hash_table(HashTable* table) {
 	if (!table) return;
 	if (table->buckets) {
-		for (int i = 0; i < table->capacity; i++) {
+		for (uint32_t i = 0; i < table->capacity; i++) {
 			if (table->buckets[i]) free_hash_entry(table->buckets[i]);
 		}
 		free(table->buckets);

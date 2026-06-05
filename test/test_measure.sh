@@ -1,5 +1,7 @@
 set -euo pipefail
 
+export LC_ALL=C
+
 PROGRAM=./huffArchiver
 TEST_DIR="test_data/comparison"
 RUNS=5
@@ -26,10 +28,13 @@ run_tests() {
 	compressed=$(mktemp --suffix=.huff)
 	restored=$(mktemp --suffix=".$extension")
 
-	compress_sum=0
-	decompress_sum=0
+	local compress_sum=0
+	local decompress_sum=0
+
+	local t
 
 	echo "Testing $file_name"
+
 	for ((i=1; i<=RUNS; i++)); do
 		t=$(
 			{ /usr/bin/time -f "%e" \
@@ -66,7 +71,7 @@ run_tests() {
 	rm -f "$compressed" "$restored"
 }
 
-for format in "txt" "jpg" "bmp" "zip"; do
+for format in "txt" "jpg" "bmp" "mp4" "zip"; do
 	for size in 1 5 10 20 40; do
 		run_tests "$format ${size}mb" "$format/${size}mb.$format" 1
 	done

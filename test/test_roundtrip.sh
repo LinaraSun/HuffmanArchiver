@@ -7,7 +7,6 @@ NC='\033[0m'
 
 PROGRAM=./huffArchiver
 RTESTS='test_data/roundtrip'
-CTESTS='test_data/comparison'
 
 echo -e "${BLUE}Running tests...${NC}"
 echo ""
