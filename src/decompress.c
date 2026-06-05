@@ -116,7 +116,7 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 	ht->symbols = (uint8_t**)calloc(symbols_count, sizeof(uint8_t*));
 	if (!ht->symbols) {}
 
-	for (int i = 0; i < symbols_count; i++) {
+	for (uint32_t i = 0; i < symbols_count; i++) {
 		ht->symbols[i] = (uint8_t*)calloc(symbol_size, sizeof(uint8_t));
 		if (!ht->symbols[i]) {
 			// Error
@@ -265,7 +265,7 @@ int writing_decoded_file(FILE* in, FILE* out, HuffmanTree* ht, uint64_t original
 	return 0;
 }
 
-int decompress_file(FILE* input, FILE* output, uint8_t symbol_len) {
+int decompress_file(FILE* input, FILE* output) {
 
 	HuffmanTree* ht = NULL;
 

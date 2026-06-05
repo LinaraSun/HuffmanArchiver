@@ -116,7 +116,7 @@ HuffmanTree* count_freq_hash(FILE* file, uint8_t symbol_len) {
 	rewind(file);
 
 	PriorityQueue* pq = pq_create(hash_table->size);
-	for (int i = 0; i < table_size; i++) {
+	for (uint32_t i = 0; i < table_size; i++) {
 		HashTableEntry* entry = hash_table->buckets[i];
 		while (entry) {
 			Node* leaf = create_node(entry->symbol_data, entry->frequency, symbol_len);
@@ -264,7 +264,7 @@ int write_header_to_file(FILE* out, HuffmanTree* ht, uint64_t original_file_size
 		return 1;
 	}
 
-	for (int sym_index = 0; sym_index < symbols_count; sym_index++) {
+	for (uint32_t sym_index = 0; sym_index < symbols_count; sym_index++) {
 		uint8_t* sym_data = ht->symbols[sym_index];
 		if (fwrite(sym_data, 1, symbol_size, out) != symbol_size) {
 			fprintf(stderr, "Error writing header to file.\n");
@@ -305,7 +305,7 @@ int write_encoded_file_1b(FILE* input, FILE* output, HuffmanTree* ht) {
 		return 1;
 	}
 
-	for (int i = 0; i < ht->symbols_count; i++) {
+	for (uint32_t i = 0; i < ht->symbols_count; i++) {
 		codes[ht->symbols[i][0]] = ht->codes[i];
 		code_lengths[ht->symbols[i][0]] = ht->code_lengths[i];
 	}
@@ -375,7 +375,7 @@ int write_encoded_file_hash(FILE* input, FILE* output, HuffmanTree* ht) {
 	uint8_t bytes_read = 0;
 	HashTable* table = create_hash_table(table_size);
 
-	for (int i = 0; i < ht->symbols_count; i++) {
+	for (uint32_t i = 0; i < ht->symbols_count; i++) {
 		add_symbol_hash(table, ht->symbols[i], symbol_len, ht->codes[i], ht->code_lengths[i]);
 	}
 

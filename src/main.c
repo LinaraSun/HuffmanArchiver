@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
 			return 0;
 		}
 	} else {
-		int decompression_res = decompress_file(input, output, symbol_len);
+		int decompression_res = decompress_file(input, output);
 		if (decompression_res == 1) {
 			printf("Decompression failed.\n");
 			fclose(input);

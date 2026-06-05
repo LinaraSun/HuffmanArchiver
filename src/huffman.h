@@ -84,7 +84,7 @@ int write_header_to_file(FILE* out, HuffmanTree* ht, uint64_t original_file_size
 int write_encoded_file_1b(FILE* input, FILE* output, HuffmanTree* ht);
 int write_encoded_file_hash(FILE* input, FILE* output, HuffmanTree* ht);
 
-int decompress_file(FILE* input, FILE* output, uint8_t symbol_len);
+int decompress_file(FILE* input, FILE* output);
 HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr);
 void recovering_codes(HuffmanTree* ht);
 int writing_decoded_file(FILE* in, FILE* out, HuffmanTree* ht, uint64_t original_file_size);
