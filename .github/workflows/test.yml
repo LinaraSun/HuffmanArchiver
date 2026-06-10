@@ -28,7 +28,10 @@ jobs:
       - name: Build
         run: make
 
-      - name: Run tests
+      - name: Run modular tests
+        run: make test
+
+      - name: Run roundtrip tests
         run: |
           chmod +x scripts/test_roundtrip.sh
           scripts/test_roundtrip.sh
