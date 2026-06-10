@@ -82,7 +82,7 @@ int main() {
 	test_three_nodes_encoding();
 	printf("Test 2: Three nodes - PASS\n\n");
 
-	printf("Huffman tree: all tests passed.\n");
+	printf("Huffman tree: all tests passed.\n\n");
 
 	return 0;
 }

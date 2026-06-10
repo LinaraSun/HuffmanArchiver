@@ -217,7 +217,7 @@ int main() {
 	test_merge();
 	printf("Test 6: Merging the priority queue - PASS\n\n");
 
-	printf("Priority queue: all tests passed.\n");
+	printf("Priority queue: all tests passed.\n\n");
 
 	return 0;
 }

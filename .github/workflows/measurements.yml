@@ -9,5 +9,5 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: make
-      - run: chmod +x test/test_measure.sh
-      - run: ./test/test_measure.sh
+      - run: chmod +x scripts/test_measure.sh
+      - run: scripts/test_measure.sh

@@ -30,5 +30,5 @@ jobs:
 
       - name: Run tests
         run: |
-          chmod +x test/test_roundtrip.sh
-          test/test_roundtrip.sh
+          chmod +x scripts/test_roundtrip.sh
+          scripts/test_roundtrip.sh

@@ -180,7 +180,7 @@ int main() {
 	test_codes();
 	printf("Test 7: Storing codes and code lengths - PASS\n\n");
 
-	printf("Hash table: all tests passed.\n");
+	printf("Hash table: all tests passed.\n\n");
 
 	return 0;
 }
