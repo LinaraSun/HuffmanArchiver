@@ -20,6 +20,8 @@ Node* create_node(uint8_t* symbol, uint32_t freq, uint8_t symbol_len) {
 	node->symbol_data = (uint8_t*)malloc(sizeof(uint8_t) * symbol_len);
 	if (!node->symbol_data) {
 		fprintf(stderr, "Failed to allocate memory for symbol data in a node.\n");
+		free(node);
+		return NULL;
 	}
 
 	memcpy(node->symbol_data, symbol, symbol_len);
@@ -119,6 +121,11 @@ Node* pq_pop(PriorityQueue* pq) {
 	}
 
 	if (pq->size == 0) return NULL;
+
+	if (!pq->nodes) {
+		fprintf(stderr, "Invalid priority queue passed to pq_pop - no nodes.\n");
+		return NULL;
+	}
 
 	if (!pq->nodes[pq->size - 1]) {
 		fprintf(stderr, "Invalid node at the end of priority queue passed to pq_pop.\n");

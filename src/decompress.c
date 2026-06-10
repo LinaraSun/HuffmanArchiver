@@ -81,12 +81,11 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 		return NULL;
 	}
 
-	// uint32_t symbols_count = *buffer_4b;
 	uint32_t symbols_count = 0;
 	memcpy(&symbols_count, buffer_4b, sizeof(uint32_t));
 
 	if (symbols_count == 0) {
-		fprintf(stderr, "Invalid header - original file size greater than zero but zero symbols.\n");
+		fprintf(stderr, "Invalid header - original file size greater than zero but zero symbols given.\n");
 		free(buffer_4b);
 		free(buffer_1b);
 		return NULL;
@@ -111,30 +110,69 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 	HuffmanTree* ht = create_tree(NULL, symbol_size);
 
 	ht->codes = (uint32_t*)calloc(symbols_count, sizeof(uint32_t));
-	if (!ht->codes) {}
+	if (!ht->codes) {
+		fprintf(stderr, "Failed to allocate memory while reading header.\n");
+		free(buffer_sym);
+		free(buffer_code_len);
+		free_tree(ht);
+		return NULL;
+	}
 
 	ht->symbols = (uint8_t**)calloc(symbols_count, sizeof(uint8_t*));
-	if (!ht->symbols) {}
+	if (!ht->symbols) {
+		fprintf(stderr, "Failed to allocate memory while reading header.\n");
+		free(buffer_sym);
+		free(buffer_code_len);
+		free_tree(ht);
+		return NULL;
+	}
 
 	for (uint32_t i = 0; i < symbols_count; i++) {
 		ht->symbols[i] = (uint8_t*)calloc(symbol_size, sizeof(uint8_t));
 		if (!ht->symbols[i]) {
-			// Error
+			fprintf(stderr, "Failed to allocate memory while reading header.\n");
+			free(buffer_sym);
+			free(buffer_code_len);
+			for (uint32_t j = 0; j < i; j++) {
+				if(ht->symbols[j]) free(ht->symbols[j]);
+			}
+			free_tree(ht);
 			return NULL;
 		}
 	}
 
 	ht->code_lengths = (uint8_t*)calloc(symbols_count, sizeof(uint8_t));
-	if (!ht->code_lengths) {}
+	if (!ht->code_lengths) {
+		fprintf(stderr, "Failed to allocate memory while reading header.\n");
+		free(buffer_sym);
+		free(buffer_code_len);
+		for (uint32_t i = 0; i < symbols_count; i++) {
+			if(ht->symbols[i]) free(ht->symbols[i]);
+		}
+		free_tree(ht);
+		return NULL;
+	}
 
 	for (uint32_t i = 0; i < symbols_count; i++) {
 		if (fread(buffer_sym, symbol_size, 1, file) != 1) {
 			fprintf(stderr, "Failed to read symbol in header.\n");
+			free(buffer_sym);
+			free(buffer_code_len);
+			for (uint32_t i = 0; i < symbols_count; i++) {
+				if(ht->symbols[i]) free(ht->symbols[i]);
+			}
+			free_tree(ht);
 			return NULL;
 		}
 
 		if (fread(buffer_code_len, 1, 1, file) != 1) {
 			fprintf(stderr, "Failed to read code length.\n");
+			free(buffer_sym);
+			free(buffer_code_len);
+			for (uint32_t i = 0; i < symbols_count; i++) {
+				if(ht->symbols[i]) free(ht->symbols[i]);
+			}
+			free_tree(ht);
 			return NULL;
 		}
 
@@ -143,8 +181,8 @@ HuffmanTree* read_header(FILE* file, uint64_t* original_file_size_ptr) {
 		ht->symbols_count++;
 	}
 
-	if (buffer_sym != NULL) free(buffer_sym);
-	if (buffer_code_len != NULL) free(buffer_code_len);
+	if (buffer_sym) free(buffer_sym);
+	if (buffer_code_len) free(buffer_code_len);
 	recovering_codes(ht);
 	return ht;
 }
