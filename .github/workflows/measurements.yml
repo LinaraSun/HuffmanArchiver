@@ -1,0 +1,13 @@
+name: Experiments
+
+on:
+  workflow_dispatch:
+
+jobs:
+  experiment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: make
+      - run: chmod +x test/test_measure.sh
+      - run: ./test/test_measure.sh
