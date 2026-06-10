@@ -6,12 +6,10 @@ BLUE='\e[0;34m'
 NC='\033[0m'
 
 PROGRAM=./huffArchiver
-RTESTS='test_data/roundtrip'
+RTESTS='test/test_data/roundtrip'
 
 echo -e "${BLUE}Running tests...${NC}"
 echo ""
-
-cd test
 
 run_tests() {
 	local test_number="$1"

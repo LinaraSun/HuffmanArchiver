@@ -3,14 +3,12 @@ set -euo pipefail
 export LC_ALL=C
 
 PROGRAM=./huffArchiver
-TEST_DIR="test_data/comparison"
+TEST_DIR="test/test_data/comparison"
 RUNS=5
 
 GREEN=$'\033[0;32m'
 RED=$'\033[0;31m'
 NC=$'\033[0m'
-
-cd test
 
 echo "file;symbol_size;original_size;compressed_size;avg_compress_s;avg_decompress_s;ratio" > results.csv
 
