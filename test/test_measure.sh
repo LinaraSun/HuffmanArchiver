@@ -10,7 +10,7 @@ GREEN=$'\033[0;32m'
 RED=$'\033[0;31m'
 NC=$'\033[0m'
 
-echo "file;symbol_size;original_size;compressed_size;avg_compress_s;avg_decompress_s;ratio" > results.csv
+echo "file;symbol_size;original_size;compressed_size;avg_compress_s;avg_decompress_s;ratio" > test/results.csv
 
 run_tests() {
 	local file_name="$1"
@@ -64,7 +64,7 @@ run_tests() {
 		"$avg_compress" \
 		"$avg_decompress" \
 		"$ratio" \
-		>> results.csv
+		>> test/results.csv
 
 	rm -f "$compressed" "$restored"
 }
