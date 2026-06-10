@@ -10,7 +10,7 @@ GREEN=$'\033[0;32m'
 RED=$'\033[0;31m'
 NC=$'\033[0m'
 
-echo "file;symbol_size;original_size;compressed_size;avg_compress_s;avg_decompress_s;ratio" > test/results.csv
+echo "file;symbol_size;original_size;compressed_size;avg_compress_s;stddev_compress;avg_decompress_s;stddev_decompress;ratio" > test/results.csv
 
 run_tests() {
 	local file_name="$1"
@@ -18,7 +18,7 @@ run_tests() {
 	local symbol_size="$3"
 	local extension="${path##*.}"
 
-	original_size=$(stat -c%s "$path")
+	local original_size=$(stat -c%s "$path")
 
 	local compressed
 	local restored
@@ -28,6 +28,9 @@ run_tests() {
 
 	local compress_sum=0
 	local decompress_sum=0
+
+	declare -a compress_times
+	declare -a decompress_times
 
 	local t
 
@@ -39,6 +42,7 @@ run_tests() {
 			"$PROGRAM" compress "$path" "$compressed" "$symbol_size" \
 			> /dev/null; } 2>&1
 		)
+		compress_times+=("$t")
 		compress_sum=$(awk "BEGIN {print $compress_sum + $t}")
 
 		t=$(
@@ -46,23 +50,49 @@ run_tests() {
 			"$PROGRAM" decompress "$compressed" "$restored" \
 			>/dev/null; } 2>&1
 		)
+		decompress_times+=("$t")
 		decompress_sum=$(awk "BEGIN {print $decompress_sum + $t}")
 	done
 
-	compressed_size=$(stat -c%s "$compressed")
+	local compressed_size=$(stat -c%s "$compressed")
+	local ratio=$(awk "BEGIN {print $compressed_size / $original_size}")
 
-	avg_compress=$(awk "BEGIN {print $compress_sum / $RUNS}")
-	avg_decompress=$(awk "BEGIN {print $decompress_sum / $RUNS}")
+	local avg_compress=$(awk "BEGIN {print $compress_sum / $RUNS}")
+	local avg_decompress=$(awk "BEGIN {print $decompress_sum / $RUNS}")
 
-	ratio=$(awk "BEGIN {print $compressed_size / $original_size}")
+	local stddev_compress=$(
+		printf '%s\n' "${compress_times[@]}" |
+		awk -v mean="$avg_compress" '
+		{
+			sum += ($1 - mean)^2
+			n++
+		}
+		END {
+			print sqrt(sum / (n - 1))
+		}'
+	)
 
-	printf "%s;%s;%s;%s;%s;%s;%s\n" \
+	local stddev_decompress=$(
+		printf '%s\n' "${decompress_times[@]}" |
+		awk -v mean="$avg_decompress" '
+		{
+			sum += ($1 - mean)^2
+			n++
+		}
+		END {
+			print sqrt(sum / (n - 1))
+		}'
+	)
+
+	printf "%s;%s;%s;%s;%s;%s;%s;%s;%s\n" \
 		"$path" \
 		"$symbol_size" \
 		"$original_size" \
 		"$compressed_size" \
 		"$avg_compress" \
+		"$stddev_compress" \
 		"$avg_decompress" \
+		"$stddev_decompress" \
 		"$ratio" \
 		>> test/results.csv
 
