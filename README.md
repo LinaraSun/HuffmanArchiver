@@ -13,10 +13,10 @@ An archiver utility based on Huffman coding, which supports compression and deco
 
 ## Building
 
-### Requirements
+### Versions
 
-* GCC
-* GNU Make
+* GCC 13.3.0
+* GNU Make 4.3
 
 ### Compile
 
@@ -69,16 +69,17 @@ Note: During decompression, the symbol size specified at compression time is rea
 
 ## Archive Format
 
-The archive contains:
+The archive contains as follows:
 
-* Original file size
-* Symbol size
-* Number of unique symbols
-* Symbol table
-* Huffman code lengths
+* 4 bytes of magic word "HUFF"
+* Version (in 1 byte format): Currently the program only supports version 1
+* Symbol size (in 1 byte format)
+* Original file size (in 8 bytes format)
+* Amount of unique symbols (in 4 bytes format)
+* Every unique symbol followed by its code length (code lengths are written in 1 byte format)
 * Compressed data stream
 
-The decompressor reconstructs canonical Huffman codes from the stored code lengths.
+The decompressor reads the header and reconstructs canonical Huffman codes from the stored code lengths.
 
 
 ## Project Structure
@@ -86,11 +87,13 @@ The decompressor reconstructs canonical Huffman codes from the stored code lengt
 ```text
 .
 ├── src/
-│   ├── main.c
-│   ├── compress.c
-│   ├── decompress.c
+│   ├── huffman.h
 │   ├── huffman.c
-│   └── huffman.h
+│   ├── compress.h
+│   ├── compress.c
+│   ├── decompress.h
+│   ├── decompress.c
+│   └── main.c
 ├── test/
 │   ├── modular/
 │   └── test_data/

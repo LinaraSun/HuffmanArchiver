@@ -1,8 +1,8 @@
-#include "huffman.h"
+#include "compress.h"
 
 HuffmanTree *count_freq_1b(FILE *file) {
-  uint32_t *freq = (uint32_t *)calloc(sizeof(uint32_t) * 256, 1);
-  if (!freq) {
+  uint32_t *frequency = (uint32_t *)calloc(sizeof(uint32_t) * 256, 1);
+  if (!frequency) {
     fprintf(stderr, "Failed to allocate memory for symbol frequncies during 1 "
                     "byte compression.\n");
     return NULL;
@@ -11,92 +11,92 @@ HuffmanTree *count_freq_1b(FILE *file) {
   uint8_t *byte = (uint8_t *)malloc(sizeof(uint8_t));
   if (!byte) {
     fprintf(stderr, "Failed to allocate memory.\n");
-    free(freq);
+    free(frequency);
     return NULL;
   }
 
   while (fread(byte, 1, 1, file)) {
-    freq[byte[0]]++;
+    frequency[byte[0]]++;
   }
 
   rewind(file);
 
   uint32_t sym_count = 0;
-  PriorityQueue *pq = pq_create(256);
+  PriorityQueue *priority_queue = pq_create(256);
   for (int i = 0; i < 256; i++) {
-    if (freq[i] > 0) {
+    if (frequency[i] > 0) {
       uint8_t symbol = (uint8_t)i;
       sym_count++;
-      Node *node = create_node(&symbol, freq[i], 1);
-      pq_push(pq, node);
+      Node *node = create_node(&symbol, frequency[i], 1);
+      pq_push(priority_queue, node);
     }
   }
 
-  Node *root = pq_merge(pq);
-  HuffmanTree *ht = create_tree(root, 1);
+  Node *root = pq_merge(priority_queue);
+  HuffmanTree *huffman_tree = create_tree(root, 1);
 
-  ht->codes = (uint32_t *)malloc(sizeof(uint32_t) * sym_count);
-  if (!ht->codes) {
+  huffman_tree->codes = (uint32_t *)malloc(sizeof(uint32_t) * sym_count);
+  if (!huffman_tree->codes) {
     fprintf(stderr, "Failed to allocate memory while counting frequencies.\n");
-    free(freq);
+    free(frequency);
     free(byte);
-    free(pq);
-    free_tree(ht);
+    free(priority_queue);
+    free_tree(huffman_tree);
     return NULL;
   }
 
-  ht->code_lengths = (uint8_t *)malloc(sizeof(uint8_t) * sym_count);
-  if (!ht->code_lengths) {
+  huffman_tree->code_lengths = (uint8_t *)malloc(sizeof(uint8_t) * sym_count);
+  if (!huffman_tree->code_lengths) {
     fprintf(stderr, "Failed to allocate memory while counting frequencies.\n");
-    free(freq);
+    free(frequency);
     free(byte);
-    free(pq);
-    free_tree(ht);
+    free(priority_queue);
+    free_tree(huffman_tree);
     return NULL;
   }
 
-  ht->symbols = (uint8_t **)malloc(sizeof(uint8_t *) * sym_count);
-  if (!ht->symbols) {
+  huffman_tree->symbols = (uint8_t **)malloc(sizeof(uint8_t *) * sym_count);
+  if (!huffman_tree->symbols) {
     fprintf(stderr, "Failed to allocate memory while counting frequencies.\n");
-    free(freq);
+    free(frequency);
     free(byte);
-    free(pq);
-    free_tree(ht);
+    free(priority_queue);
+    free_tree(huffman_tree);
     return NULL;
   }
 
   if (sym_count == 1) {
     fread(byte, 1, 1, file);
-    ht->codes[0] = 0;
-    ht->code_lengths[0] = 1;
-    ht->symbols[0] = ht->root->symbol_data;
-    ht->symbols_count = 1;
+    huffman_tree->codes[0] = 0;
+    huffman_tree->code_lengths[0] = 1;
+    huffman_tree->symbols[0] = huffman_tree->root->symbol_data;
+    huffman_tree->symbols_count = 1;
     rewind(file);
   } else {
-    counting_code_lengths(ht, ht->root);
-    encoding_from_len(ht);
+    counting_code_lengths(huffman_tree, huffman_tree->root);
+    encoding_from_len(huffman_tree);
   }
 
-  free(freq);
+  free(frequency);
   free(byte);
-  pq_free(pq);
-  return ht;
+  pq_free(priority_queue);
+  return huffman_tree;
 }
 
-HuffmanTree *count_freq_hash(FILE *file, uint8_t symbol_len) {
+HuffmanTree *count_freq_hash(FILE *file, uint8_t symbol_length) {
   uint32_t table_size = 0;
 
-  if (symbol_len == 2) {
+  if (symbol_length == 2) {
     table_size = 8192;
-  } else if (symbol_len == 3) {
+  } else if (symbol_length == 3) {
     table_size = 16384;
-  } else if (symbol_len == 4) {
+  } else if (symbol_length == 4) {
     table_size = 32768;
   }
 
   HashTable *hash_table = create_hash_table(table_size);
 
-  uint8_t *buffer = (uint8_t *)malloc(sizeof(uint8_t) * symbol_len);
+  uint8_t *buffer = (uint8_t *)malloc(sizeof(uint8_t) * symbol_length);
   if (!buffer) {
     fprintf(stderr, "Failed to allocate memory while counting frequencies.\n");
     free_hash_table(hash_table);
@@ -105,117 +105,122 @@ HuffmanTree *count_freq_hash(FILE *file, uint8_t symbol_len) {
 
   uint8_t bytes_read = 0;
 
-  while ((bytes_read = fread(buffer, 1, symbol_len, file)) == symbol_len) {
-    add_symbol_hash(hash_table, buffer, symbol_len, 0, 0);
+  while ((bytes_read = fread(buffer, 1, symbol_length, file)) ==
+         symbol_length) {
+    add_symbol_hash(hash_table, buffer, symbol_length, 0, 0);
   }
 
   if (bytes_read > 0) {
-    memset(buffer + bytes_read, 0, symbol_len - bytes_read);
-    add_symbol_hash(hash_table, buffer, symbol_len, 0, 0);
+    memset(buffer + bytes_read, 0, symbol_length - bytes_read);
+    add_symbol_hash(hash_table, buffer, symbol_length, 0, 0);
   }
 
   rewind(file);
 
-  PriorityQueue *pq = pq_create(hash_table->size);
+  PriorityQueue *priority_queue = pq_create(hash_table->size);
   for (uint32_t i = 0; i < table_size; i++) {
     HashTableEntry *entry = hash_table->buckets[i];
     while (entry) {
       Node *leaf =
-          create_node(entry->symbol_data, entry->frequency, symbol_len);
-      pq_push(pq, leaf);
+          create_node(entry->symbol_data, entry->frequency, symbol_length);
+      pq_push(priority_queue, leaf);
       entry = entry->next;
     }
   }
 
-  uint32_t sym_count = pq->size;
-  Node *root = pq_merge(pq);
-  HuffmanTree *ht = create_tree(root, symbol_len);
+  uint32_t sym_count = priority_queue->size;
+  Node *root = pq_merge(priority_queue);
+  HuffmanTree *huffman_tree = create_tree(root, symbol_length);
 
-  ht->codes = (uint32_t *)malloc(sizeof(uint32_t) * sym_count);
-  if (!ht->codes) {
+  huffman_tree->codes = (uint32_t *)malloc(sizeof(uint32_t) * sym_count);
+  if (!huffman_tree->codes) {
     fprintf(stderr, "Failed to allocate memory while counting frequncies.\n");
     free_hash_table(hash_table);
     free(buffer);
-    pq_free(pq);
-    free_tree(ht);
+    pq_free(priority_queue);
+    free_tree(huffman_tree);
     return NULL;
   }
 
-  ht->code_lengths = (uint8_t *)malloc(sizeof(uint8_t) * sym_count);
-  if (!ht->code_lengths) {
+  huffman_tree->code_lengths = (uint8_t *)malloc(sizeof(uint8_t) * sym_count);
+  if (!huffman_tree->code_lengths) {
     fprintf(stderr, "Failed to allocate memory while counting frequncies.\n");
     free_hash_table(hash_table);
     free(buffer);
-    pq_free(pq);
-    free_tree(ht);
+    pq_free(priority_queue);
+    free_tree(huffman_tree);
     return NULL;
   }
 
-  ht->symbols = (uint8_t **)malloc(sizeof(uint8_t *) * sym_count);
-  if (!ht->symbols) {
+  huffman_tree->symbols = (uint8_t **)malloc(sizeof(uint8_t *) * sym_count);
+  if (!huffman_tree->symbols) {
     fprintf(stderr, "Failed to allocate memory while counting frequncies.\n");
     free_hash_table(hash_table);
     free(buffer);
-    pq_free(pq);
-    free_tree(ht);
+    pq_free(priority_queue);
+    free_tree(huffman_tree);
     return NULL;
   }
 
   if (sym_count == 1) {
-    fread(buffer, 1, symbol_len, file);
-    ht->codes[0] = 0;
-    ht->code_lengths[0] = 1;
-    ht->symbols[0] = ht->root->symbol_data;
-    ht->symbols_count = 1;
+    fread(buffer, 1, symbol_length, file);
+    huffman_tree->codes[0] = 0;
+    huffman_tree->code_lengths[0] = 1;
+    huffman_tree->symbols[0] = huffman_tree->root->symbol_data;
+    huffman_tree->symbols_count = 1;
     rewind(file);
   } else {
-    counting_code_lengths(ht, ht->root);
-    encoding_from_len(ht);
+    counting_code_lengths(huffman_tree, huffman_tree->root);
+    encoding_from_len(huffman_tree);
   }
 
   free(buffer);
-  pq_free(pq);
+  pq_free(priority_queue);
   free_hash_table(hash_table);
-  return ht;
+  return huffman_tree;
 }
 
-void counting_code_lengths(HuffmanTree *ht, Node *root) {
-  counting_len_recursion(ht, root, 0);
+void counting_code_lengths(HuffmanTree *huffman_tree, Node *root) {
+  counting_len_recursion(huffman_tree, root, 0);
 }
 
-void counting_len_recursion(HuffmanTree *ht, Node *node, uint8_t code_len) {
+void counting_len_recursion(HuffmanTree *huffman_tree, Node *node,
+                            uint8_t code_length) {
   if (node_is_leaf(node)) {
-    ht->code_lengths[ht->symbols_count] = code_len;
-    ht->symbols[ht->symbols_count] = node->symbol_data;
-    ht->symbols_count++;
+    huffman_tree->code_lengths[huffman_tree->symbols_count] = code_length;
+    huffman_tree->symbols[huffman_tree->symbols_count] = node->symbol_data;
+    huffman_tree->symbols_count++;
   } else {
     if (node->right) {
-      counting_len_recursion(ht, node->right, code_len + 1);
+      counting_len_recursion(huffman_tree, node->right, code_length + 1);
     }
 
     if (node->left) {
-      counting_len_recursion(ht, node->left, code_len + 1);
+      counting_len_recursion(huffman_tree, node->left, code_length + 1);
     }
   }
 }
 
-void encoding_from_len(HuffmanTree *ht) {
+void encoding_from_len(HuffmanTree *huffman_tree) {
 
   uint8_t temp_len = 0;
   uint8_t *temp_sym = NULL;
-  for (uint32_t i = 1; i < ht->symbols_count; i++) {
+  for (uint32_t i = 1; i < huffman_tree->symbols_count; i++) {
     uint32_t j = i;
-    while (j >= 1 && ((ht->code_lengths[j - 1] > ht->code_lengths[j]) ||
-                      (ht->code_lengths[j - 1] == ht->code_lengths[j] &&
-                       compare_symbols(ht->symbols[j - 1], ht->symbols[j],
-                                       ht->symbol_length) > 0))) {
-      temp_len = ht->code_lengths[j];
-      ht->code_lengths[j] = ht->code_lengths[j - 1];
-      ht->code_lengths[j - 1] = temp_len;
+    while (
+        j >= 1 &&
+        ((huffman_tree->code_lengths[j - 1] > huffman_tree->code_lengths[j]) ||
+         (huffman_tree->code_lengths[j - 1] == huffman_tree->code_lengths[j] &&
+          compare_symbols(huffman_tree->symbols[j - 1],
+                          huffman_tree->symbols[j],
+                          huffman_tree->symbol_length) > 0))) {
+      temp_len = huffman_tree->code_lengths[j];
+      huffman_tree->code_lengths[j] = huffman_tree->code_lengths[j - 1];
+      huffman_tree->code_lengths[j - 1] = temp_len;
 
-      temp_sym = ht->symbols[j];
-      ht->symbols[j] = ht->symbols[j - 1];
-      ht->symbols[j - 1] = temp_sym;
+      temp_sym = huffman_tree->symbols[j];
+      huffman_tree->symbols[j] = huffman_tree->symbols[j - 1];
+      huffman_tree->symbols[j - 1] = temp_sym;
 
       j--;
     }
@@ -224,61 +229,61 @@ void encoding_from_len(HuffmanTree *ht) {
   uint32_t code = 0;
   uint8_t current_len = 1;
 
-  for (uint32_t i = 0; i < ht->symbols_count; i++) {
-    if (current_len < ht->code_lengths[i]) {
-      code = code << (ht->code_lengths[i] - current_len);
-      current_len = ht->code_lengths[i];
+  for (uint32_t i = 0; i < huffman_tree->symbols_count; i++) {
+    if (current_len < huffman_tree->code_lengths[i]) {
+      code = code << (huffman_tree->code_lengths[i] - current_len);
+      current_len = huffman_tree->code_lengths[i];
     }
 
-    ht->codes[i] = code;
+    huffman_tree->codes[i] = code;
 
     code++;
   }
 }
 
-int write_header_to_file(FILE *out, HuffmanTree *ht,
+int write_header_to_file(FILE *output, HuffmanTree *huffman_tree,
                          uint64_t original_file_size) {
-  if (fwrite("HUFF", 1, 4, out) != 4) {
+  if (fwrite("HUFF", 1, 4, output) != 4) {
     fprintf(stderr, "Error writing header to file.\n");
     return 1;
   }
 
   uint8_t version = 1;
-  if (fwrite(&version, 1, 1, out) != 1) {
+  if (fwrite(&version, 1, 1, output) != 1) {
     fprintf(stderr, "Error writing header to file.\n");
     return 1;
   }
 
-  uint8_t symbol_size = ht->symbol_length;
-  if (fwrite(&symbol_size, 1, 1, out) != 1) {
+  uint8_t symbol_size = huffman_tree->symbol_length;
+  if (fwrite(&symbol_size, 1, 1, output) != 1) {
     fprintf(stderr, "Error writing header to file.\n");
     return 1;
   }
 
-  if (fwrite(&original_file_size, 1, 8, out) != 8) {
+  if (fwrite(&original_file_size, 1, 8, output) != 8) {
     fprintf(stderr, "Error writing header to file.\n");
     return 1;
   }
 
-  uint32_t symbols_count = ht->symbols_count;
+  uint32_t symbols_count = huffman_tree->symbols_count;
 
   if (symbols_count == 0)
     return 0;
 
-  if (fwrite(&symbols_count, 1, 4, out) != 4) {
+  if (fwrite(&symbols_count, 1, 4, output) != 4) {
     fprintf(stderr, "Error writing header to file.\n");
     return 1;
   }
 
   for (uint32_t sym_index = 0; sym_index < symbols_count; sym_index++) {
-    uint8_t *sym_data = ht->symbols[sym_index];
-    if (fwrite(sym_data, 1, symbol_size, out) != symbol_size) {
+    uint8_t *sym_data = huffman_tree->symbols[sym_index];
+    if (fwrite(sym_data, 1, symbol_size, output) != symbol_size) {
       fprintf(stderr, "Error writing header to file.\n");
       return 1;
     }
 
-    uint8_t code_len = ht->code_lengths[sym_index];
-    if (fwrite(&code_len, 1, 1, out) != 1) {
+    uint8_t code_length = huffman_tree->code_lengths[sym_index];
+    if (fwrite(&code_length, 1, 1, output) != 1) {
       fprintf(stderr, "Error writing header to file.\n");
       return 1;
     }
@@ -287,7 +292,8 @@ int write_header_to_file(FILE *out, HuffmanTree *ht,
   return 0;
 }
 
-int write_encoded_file_1b(FILE *input, FILE *output, HuffmanTree *ht) {
+int write_encoded_file_1b(FILE *input, FILE *output,
+                          HuffmanTree *huffman_tree) {
 
   uint32_t *codes = (uint32_t *)calloc(256, sizeof(uint32_t));
   if (!codes) {
@@ -310,9 +316,9 @@ int write_encoded_file_1b(FILE *input, FILE *output, HuffmanTree *ht) {
     return 1;
   }
 
-  for (uint32_t i = 0; i < ht->symbols_count; i++) {
-    codes[ht->symbols[i][0]] = ht->codes[i];
-    code_lengths[ht->symbols[i][0]] = ht->code_lengths[i];
+  for (uint32_t i = 0; i < huffman_tree->symbols_count; i++) {
+    codes[huffman_tree->symbols[i][0]] = huffman_tree->codes[i];
+    code_lengths[huffman_tree->symbols[i][0]] = huffman_tree->code_lengths[i];
   }
 
   rewind(input);
@@ -322,10 +328,10 @@ int write_encoded_file_1b(FILE *input, FILE *output, HuffmanTree *ht) {
 
   while (fread(buffer, 1, 1, input) == 1) {
     uint32_t code = codes[buffer[0]];
-    uint8_t code_len = code_lengths[buffer[0]];
-    while (code_len > 0) {
-      byte = (byte << 1) | ((code >> (code_len - 1)) & 1);
-      code_len--;
+    uint8_t code_length = code_lengths[buffer[0]];
+    while (code_length > 0) {
+      byte = (byte << 1) | ((code >> (code_length - 1)) & 1);
+      code_length--;
       bits_read++;
       if (bits_read == 8) {
         if (fwrite(&byte, 1, 1, output) != 1) {
@@ -358,20 +364,21 @@ int write_encoded_file_1b(FILE *input, FILE *output, HuffmanTree *ht) {
   return 0;
 }
 
-int write_encoded_file_hash(FILE *input, FILE *output, HuffmanTree *ht) {
+int write_encoded_file_hash(FILE *input, FILE *output,
+                            HuffmanTree *huffman_tree) {
 
-  uint8_t symbol_len = ht->symbol_length;
+  uint8_t symbol_length = huffman_tree->symbol_length;
 
   uint32_t table_size = 0;
-  if (symbol_len == 2) {
+  if (symbol_length == 2) {
     table_size = 8192;
-  } else if (symbol_len == 3) {
+  } else if (symbol_length == 3) {
     table_size = 16384;
-  } else if (symbol_len == 4) {
+  } else if (symbol_length == 4) {
     table_size = 32768;
   }
 
-  uint8_t *buffer = (uint8_t *)malloc(sizeof(uint8_t) * symbol_len);
+  uint8_t *buffer = (uint8_t *)malloc(sizeof(uint8_t) * symbol_length);
   if (!buffer) {
     fprintf(stderr, "Failed to allocate memory while writing encoded file.\n");
     return 1;
@@ -380,9 +387,9 @@ int write_encoded_file_hash(FILE *input, FILE *output, HuffmanTree *ht) {
   uint8_t bytes_read = 0;
   HashTable *table = create_hash_table(table_size);
 
-  for (uint32_t i = 0; i < ht->symbols_count; i++) {
-    add_symbol_hash(table, ht->symbols[i], symbol_len, ht->codes[i],
-                    ht->code_lengths[i]);
+  for (uint32_t i = 0; i < huffman_tree->symbols_count; i++) {
+    add_symbol_hash(table, huffman_tree->symbols[i], symbol_length,
+                    huffman_tree->codes[i], huffman_tree->code_lengths[i]);
   }
 
   rewind(input);
@@ -390,11 +397,12 @@ int write_encoded_file_hash(FILE *input, FILE *output, HuffmanTree *ht) {
   uint8_t byte = 0;
   uint8_t bits_read = 0;
 
-  while ((bytes_read = fread(buffer, 1, symbol_len, input)) == symbol_len) {
-    uint32_t hash_index = hash_function(buffer, symbol_len, table_size);
+  while ((bytes_read = fread(buffer, 1, symbol_length, input)) ==
+         symbol_length) {
+    uint32_t hash_index = hash_function(buffer, symbol_length, table_size);
     HashTableEntry *entry = table->buckets[hash_index];
 
-    while (entry && memcmp(entry->symbol_data, buffer, symbol_len) != 0) {
+    while (entry && memcmp(entry->symbol_data, buffer, symbol_length) != 0) {
       entry = entry->next;
     }
 
@@ -405,10 +413,10 @@ int write_encoded_file_hash(FILE *input, FILE *output, HuffmanTree *ht) {
     }
 
     uint32_t code = entry->code;
-    uint8_t code_len = entry->code_len;
-    while (code_len > 0) {
-      byte = (byte << 1) | ((code >> (code_len - 1)) & 1);
-      code_len--;
+    uint8_t code_length = entry->code_length;
+    while (code_length > 0) {
+      byte = (byte << 1) | ((code >> (code_length - 1)) & 1);
+      code_length--;
       bits_read++;
       if (bits_read == 8) {
         if (fwrite(&byte, 1, 1, output) != 1) {
@@ -438,22 +446,22 @@ int write_encoded_file_hash(FILE *input, FILE *output, HuffmanTree *ht) {
   return 0;
 }
 
-int compress_file(FILE *input, FILE *output, uint8_t symbol_len,
+int compress_file(FILE *input, FILE *output, uint8_t symbol_length,
                   uint64_t original_file_size) {
   if (!input || !output) {
     fprintf(stderr,
-            "Invalid input and output streams passed to compress_file.\n");
+            "Invalid input and/or output streams passed to compress_file.\n");
     return 1;
   }
 
   HuffmanTree *tree = NULL;
 
   if (original_file_size == 0) {
-    tree = create_tree(NULL, symbol_len);
-  } else if (symbol_len == 1) {
+    tree = create_tree(NULL, symbol_length);
+  } else if (symbol_length == 1) {
     tree = count_freq_1b(input);
   } else {
-    tree = count_freq_hash(input, symbol_len);
+    tree = count_freq_hash(input, symbol_length);
   }
 
   if (!tree) {
@@ -471,7 +479,7 @@ int compress_file(FILE *input, FILE *output, uint8_t symbol_len,
     return 0;
   }
 
-  if (symbol_len == 1) {
+  if (symbol_length == 1) {
     if (write_encoded_file_1b(input, output, tree) != 0) {
       free_tree(tree);
       return 1;

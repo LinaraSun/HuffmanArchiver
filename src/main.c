@@ -1,4 +1,7 @@
-#include "huffman.h"
+#include "compress.h"
+#include "decompress.h"
+
+#define MAX_SYMBOL_BYTES 4
 
 void fprint_usage(char *program) {
   fprintf(stderr,
@@ -32,7 +35,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  uint8_t symbol_len = 1;
+  uint8_t symbol_length = 1;
   if (argc == 5) {
     if (!atoi(argv[4])) {
       fprint_usage(argv[0]);
@@ -41,8 +44,8 @@ int main(int argc, char **argv) {
       fclose(output);
       return 1;
     } else {
-      uint32_t symbol_len_32 = atoi(argv[4]);
-      if (symbol_len_32 < 1 || symbol_len_32 > MAX_SYMBOL_BYTES) {
+      uint32_t symbol_length_32 = atoi(argv[4]);
+      if (symbol_length_32 < 1 || symbol_length_32 > MAX_SYMBOL_BYTES) {
         fprint_usage(argv[0]);
         fprintf(stderr, "Symbol length should be an integer higher or equal to "
                         "one and lower or equal to four.\n");
@@ -50,7 +53,7 @@ int main(int argc, char **argv) {
         fclose(output);
         return 1;
       }
-      symbol_len = (uint8_t)symbol_len_32;
+      symbol_length = (uint8_t)symbol_length_32;
     }
   }
 
@@ -63,9 +66,9 @@ int main(int argc, char **argv) {
     }
     uint64_t original_file_size = (uint64_t)orig_file_size;
     rewind(input);
-    int compression_res =
-        compress_file(input, output, symbol_len, original_file_size);
-    if (compression_res == 1) {
+    int compression_result =
+        compress_file(input, output, symbol_length, original_file_size);
+    if (compression_result == 1) {
       printf("Compression failed.\n");
       fclose(input);
       fclose(output);
@@ -77,8 +80,8 @@ int main(int argc, char **argv) {
       return 0;
     }
   } else {
-    int decompression_res = decompress_file(input, output);
-    if (decompression_res == 1) {
+    int decompression_result = decompress_file(input, output);
+    if (decompression_result == 1) {
       printf("Decompression failed.\n");
       fclose(input);
       fclose(output);

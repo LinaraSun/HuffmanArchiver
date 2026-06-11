@@ -1,14 +1,14 @@
 #include "huffman.h"
 
-Node *create_node(uint8_t *symbol, uint32_t freq, uint8_t symbol_len) {
+Node *create_node(uint8_t *symbol, uint32_t frequency, uint8_t symbol_length) {
   Node *node = (Node *)malloc(sizeof(Node));
   if (!node) {
     fprintf(stderr, "Failed to allocate memory for a node.\n");
     return NULL;
   }
 
-  node->frequency = freq;
-  node->symbol_length = symbol_len;
+  node->frequency = frequency;
+  node->symbol_length = symbol_length;
   node->right = NULL;
   node->left = NULL;
 
@@ -17,14 +17,15 @@ Node *create_node(uint8_t *symbol, uint32_t freq, uint8_t symbol_len) {
     return node;
   }
 
-  node->symbol_data = (uint8_t *)malloc(sizeof(uint8_t) * symbol_len);
+  node->symbol_data = (uint8_t *)malloc(sizeof(uint8_t) * symbol_length);
   if (!node->symbol_data) {
-    fprintf(stderr, "Failed to allocate memory for symbol data in a node.\n");
+    fprintf(stderr,
+            "Failed to allocate memory for symbol data input a node.\n");
     free(node);
     return NULL;
   }
 
-  memcpy(node->symbol_data, symbol, symbol_len);
+  memcpy(node->symbol_data, symbol, symbol_length);
 
   return node;
 }
@@ -47,26 +48,27 @@ uint8_t node_is_leaf(Node *node) {
 
 PriorityQueue *pq_create(uint32_t initial_capacity) {
 
-  PriorityQueue *pq = (PriorityQueue *)malloc(sizeof(PriorityQueue));
-  if (!pq) {
+  PriorityQueue *priority_queue =
+      (PriorityQueue *)malloc(sizeof(PriorityQueue));
+  if (!priority_queue) {
     fprintf(stderr, "Failed to allocate memory for a priority queue.\n");
     return NULL;
   }
 
-  pq->nodes = (Node **)malloc(sizeof(Node *) * initial_capacity);
-  if (!pq->nodes) {
+  priority_queue->nodes = (Node **)malloc(sizeof(Node *) * initial_capacity);
+  if (!priority_queue->nodes) {
     fprintf(stderr,
-            "Failed to allocate memory for nodes in a priority queue.\n");
+            "Failed to allocate memory for nodes input a priority queue.\n");
     return NULL;
   }
 
-  pq->size = 0;
-  pq->capacity = initial_capacity;
-  return pq;
+  priority_queue->size = 0;
+  priority_queue->capacity = initial_capacity;
+  return priority_queue;
 }
 
-void pq_push(PriorityQueue *pq, Node *node) {
-  if (!pq) {
+void pq_push(PriorityQueue *priority_queue, Node *node) {
+  if (!priority_queue) {
     fprintf(stderr, "Invalid priority queue passed to pq_push.\n");
     return;
   }
@@ -76,90 +78,100 @@ void pq_push(PriorityQueue *pq, Node *node) {
     return;
   }
 
-  if (pq->size + 1 > pq->capacity) {
-    pq->capacity *= 2;
-    if (realloc(pq->nodes, sizeof(Node *) * pq->capacity) == NULL) {
+  if (priority_queue->size + 1 > priority_queue->capacity) {
+    priority_queue->capacity *= 2;
+    if (realloc(priority_queue->nodes,
+                sizeof(Node *) * priority_queue->capacity) == NULL) {
       fprintf(stderr, "Error resizing priority queue.\n");
       return;
     }
   }
 
-  pq->nodes[pq->size] = node;
-  uint32_t current_index = pq->size;
-  pq->size++;
+  priority_queue->nodes[priority_queue->size] = node;
+  uint32_t current_index = priority_queue->size;
+  priority_queue->size++;
 
   while (current_index >= 1 &&
-         pq->nodes[current_index - 1]->frequency < node->frequency) {
-    pq->nodes[current_index] = pq->nodes[current_index - 1];
-    pq->nodes[current_index - 1] = node;
+         priority_queue->nodes[current_index - 1]->frequency <
+             node->frequency) {
+    priority_queue->nodes[current_index] =
+        priority_queue->nodes[current_index - 1];
+    priority_queue->nodes[current_index - 1] = node;
     current_index--;
   }
 
   while (current_index >= 1 &&
-         pq->nodes[current_index - 1]->frequency == node->frequency) {
-    if (node->symbol_data && pq->nodes[current_index - 1]->symbol_data &&
-        compare_symbols(pq->nodes[current_index - 1]->symbol_data,
+         priority_queue->nodes[current_index - 1]->frequency ==
+             node->frequency) {
+    if (node->symbol_data &&
+        priority_queue->nodes[current_index - 1]->symbol_data &&
+        compare_symbols(priority_queue->nodes[current_index - 1]->symbol_data,
                         node->symbol_data, node->symbol_length) > 0) {
-      pq->nodes[current_index] = pq->nodes[current_index - 1];
-      pq->nodes[current_index - 1] = node;
+      priority_queue->nodes[current_index] =
+          priority_queue->nodes[current_index - 1];
+      priority_queue->nodes[current_index - 1] = node;
       current_index--;
-    } else if (node->symbol_data && pq->nodes[current_index - 1]->symbol_data) {
+    } else if (node->symbol_data &&
+               priority_queue->nodes[current_index - 1]->symbol_data) {
       break;
     } else if (node->symbol_data &&
-               !pq->nodes[current_index - 1]->symbol_data) {
+               !priority_queue->nodes[current_index - 1]->symbol_data) {
       break;
     } else if (!node->symbol_data &&
-               pq->nodes[current_index - 1]->symbol_data) {
-      pq->nodes[current_index] = pq->nodes[current_index - 1];
-      pq->nodes[current_index - 1] = node;
+               priority_queue->nodes[current_index - 1]->symbol_data) {
+      priority_queue->nodes[current_index] =
+          priority_queue->nodes[current_index - 1];
+      priority_queue->nodes[current_index - 1] = node;
       current_index--;
     } else {
-      if (height_left(node) <= height_left(pq->nodes[current_index - 1])) {
+      if (height_left(node) <=
+          height_left(priority_queue->nodes[current_index - 1])) {
         break;
       } else {
-        pq->nodes[current_index] = pq->nodes[current_index - 1];
-        pq->nodes[current_index - 1] = node;
+        priority_queue->nodes[current_index] =
+            priority_queue->nodes[current_index - 1];
+        priority_queue->nodes[current_index - 1] = node;
         current_index--;
       }
     }
   }
 }
 
-Node *pq_pop(PriorityQueue *pq) {
-  if (!pq) {
+Node *pq_pop(PriorityQueue *priority_queue) {
+  if (!priority_queue) {
     fprintf(stderr, "Invalid priority queue passed to pq_pop.\n");
     return NULL;
   }
 
-  if (pq->size == 0)
+  if (priority_queue->size == 0)
     return NULL;
 
-  if (!pq->nodes) {
+  if (!priority_queue->nodes) {
     fprintf(stderr, "Invalid priority queue passed to pq_pop - no nodes.\n");
     return NULL;
   }
 
-  if (!pq->nodes[pq->size - 1]) {
+  if (!priority_queue->nodes[priority_queue->size - 1]) {
     fprintf(stderr,
             "Invalid node at the end of priority queue passed to pq_pop.\n");
     return NULL;
   }
 
-  Node *node = pq->nodes[pq->size - 1];
-  pq->nodes[pq->size - 1] = NULL;
-  pq->size--;
+  Node *node = priority_queue->nodes[priority_queue->size - 1];
+  priority_queue->nodes[priority_queue->size - 1] = NULL;
+  priority_queue->size--;
   return node;
 }
 
-Node *pq_merge(PriorityQueue *pq) {
-  if (!pq) {
+Node *pq_merge(PriorityQueue *priority_queue) {
+  if (!priority_queue) {
     fprintf(stderr, "Invalid priority queue passed to pq_merge.\n");
     return NULL;
   }
 
-  while (pq->size > 1) {
-    Node *node1 = pq_pop(pq);
-    Node *node2 = pq_pop(pq);
+  while (priority_queue->size > 1) {
+    Node *node1 = pq_pop(priority_queue);
+    Node *node2 = pq_pop(priority_queue);
     Node *res_node = create_node(NULL, node1->frequency + node2->frequency,
                                  node1->symbol_length);
     if ((node1->symbol_data && node2->symbol_data) ||
@@ -176,53 +188,53 @@ Node *pq_merge(PriorityQueue *pq) {
       res_node->right = node1;
       res_node->left = node2;
     }
-    pq_push(pq, res_node);
+    pq_push(priority_queue, res_node);
   }
 
-  return pq->nodes[0];
+  return priority_queue->nodes[0];
 }
 
-void pq_free(PriorityQueue *pq) {
-  if (!pq)
+void pq_free(PriorityQueue *priority_queue) {
+  if (!priority_queue)
     return;
-  if (pq->nodes)
-    free(pq->nodes);
-  free(pq);
+  if (priority_queue->nodes)
+    free(priority_queue->nodes);
+  free(priority_queue);
 }
 
-HuffmanTree *create_tree(Node *node, uint8_t symbol_len) {
-  HuffmanTree *ht = (HuffmanTree *)malloc(sizeof(HuffmanTree));
-  if (!ht) {
+HuffmanTree *create_tree(Node *node, uint8_t symbol_length) {
+  HuffmanTree *huffman_tree = (HuffmanTree *)malloc(sizeof(HuffmanTree));
+  if (!huffman_tree) {
     fprintf(stderr, "Failed to allocate memory for the huffman tree.\n");
     return NULL;
   }
 
-  ht->root = node;
-  ht->codes = NULL;
-  ht->symbols = NULL;
-  ht->code_lengths = NULL;
-  ht->symbol_length = symbol_len;
-  ht->symbols_count = 0;
-  return ht;
+  huffman_tree->root = node;
+  huffman_tree->codes = NULL;
+  huffman_tree->symbols = NULL;
+  huffman_tree->code_lengths = NULL;
+  huffman_tree->symbol_length = symbol_length;
+  huffman_tree->symbols_count = 0;
+  return huffman_tree;
 }
 
-void free_tree(HuffmanTree *ht) {
-  if (!ht)
+void free_tree(HuffmanTree *huffman_tree) {
+  if (!huffman_tree)
     return;
-  if (ht->root)
-    free_node(ht->root);
-  if (ht->codes)
-    free(ht->codes);
-  if (ht->symbols) {
-    for (uint32_t i = 0; i < ht->symbols_count; i++) {
-      if (ht->symbols[i])
-        free(ht->symbols[i]);
+  if (huffman_tree->root)
+    free_node(huffman_tree->root);
+  if (huffman_tree->codes)
+    free(huffman_tree->codes);
+  if (huffman_tree->symbols) {
+    for (uint32_t i = 0; i < huffman_tree->symbols_count; i++) {
+      if (huffman_tree->symbols[i])
+        free(huffman_tree->symbols[i]);
     }
-    free(ht->symbols);
+    free(huffman_tree->symbols);
   }
-  if (ht->code_lengths)
-    free(ht->code_lengths);
-  free(ht);
+  if (huffman_tree->code_lengths)
+    free(huffman_tree->code_lengths);
+  free(huffman_tree);
 }
 
 HashTable *create_hash_table(uint32_t capacity) {
@@ -234,7 +246,8 @@ HashTable *create_hash_table(uint32_t capacity) {
 
   table->buckets = calloc(capacity, sizeof(HashTableEntry *));
   if (!table->buckets) {
-    fprintf(stderr, "Failed to allocate memory for buckets in hash table.\n");
+    fprintf(stderr,
+            "Failed to allocate memory for buckets input hash table.\n");
     free(table);
     return NULL;
   }
@@ -267,22 +280,22 @@ void free_hash_entry(HashTableEntry *entry) {
   free(entry);
 }
 
-uint32_t hash_function(uint8_t *symbol, uint8_t symbol_len,
+uint32_t hash_function(uint8_t *symbol, uint8_t symbol_length,
                        uint32_t table_size) {
   uint32_t hash = 5381;
-  for (uint8_t i = 0; i < symbol_len; i++) {
+  for (uint8_t i = 0; i < symbol_length; i++) {
     hash = ((hash << 5) + hash) + symbol[i];
   }
   return hash % table_size;
 }
 
-void add_symbol_hash(HashTable *table, uint8_t *symbol, uint8_t symbol_len,
-                     uint32_t code, uint8_t code_len) {
-  uint32_t hash_index = hash_function(symbol, symbol_len, table->capacity);
+void add_symbol_hash(HashTable *table, uint8_t *symbol, uint8_t symbol_length,
+                     uint32_t code, uint8_t code_length) {
+  uint32_t hash_index = hash_function(symbol, symbol_length, table->capacity);
 
   HashTableEntry *current = table->buckets[hash_index];
   while (current) {
-    if (compare_symbols(current->symbol_data, symbol, symbol_len) == 0) {
+    if (compare_symbols(current->symbol_data, symbol, symbol_length) == 0) {
       current->frequency++;
       return;
     }
@@ -295,27 +308,19 @@ void add_symbol_hash(HashTable *table, uint8_t *symbol, uint8_t symbol_len,
     return;
   }
 
-  new_entry->symbol_data = (uint8_t *)malloc(sizeof(uint8_t) * symbol_len);
-  memcpy(new_entry->symbol_data, symbol, symbol_len);
+  new_entry->symbol_data = (uint8_t *)malloc(sizeof(uint8_t) * symbol_length);
+  memcpy(new_entry->symbol_data, symbol, symbol_length);
   new_entry->frequency = 1;
-  new_entry->symbol_len = symbol_len;
+  new_entry->symbol_length = symbol_length;
   new_entry->next = table->buckets[hash_index];
-  new_entry->code_len = code_len;
+  new_entry->code_length = code_length;
   new_entry->code = code;
   table->buckets[hash_index] = new_entry;
   table->size++;
 }
 
-int compare_symbols(uint8_t *symbol1, uint8_t *symbol2, uint8_t symbol_len) {
-  return memcmp(symbol1, symbol2, symbol_len);
-}
-
-uint8_t *min_symbol(Node *node) {
-  if (node->symbol_data) {
-    return node->symbol_data;
-  } else {
-    return min_symbol(node->right);
-  }
+int compare_symbols(uint8_t *symbol1, uint8_t *symbol2, uint8_t symbol_length) {
+  return memcmp(symbol1, symbol2, symbol_length);
 }
 
 int height_left(Node *node) {

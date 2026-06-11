@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_SYMBOL_BYTES 4
-
 typedef struct Node {
   uint8_t *symbol_data;
   uint32_t frequency;
@@ -34,9 +32,9 @@ typedef struct {
 typedef struct HashTableEntry {
   uint8_t *symbol_data;
   uint32_t frequency;
-  uint8_t symbol_len;
+  uint8_t symbol_length;
   uint32_t code;
-  uint8_t code_len;
+  uint8_t code_length;
   struct HashTableEntry *next;
 } HashTableEntry;
 
@@ -46,51 +44,28 @@ typedef struct {
   uint32_t capacity;
 } HashTable;
 
-typedef struct {
-  uint8_t *symbol;
-  uint8_t code_len;
-} HashDecodeEntry;
-
-Node *create_node(uint8_t *symbol, uint32_t freq, uint8_t symbol_len);
+Node *create_node(uint8_t *symbol, uint32_t frequency, uint8_t symbol_length);
 void free_node(Node *node);
 uint8_t node_is_leaf(Node *node);
 
 PriorityQueue *pq_create(uint32_t capacity);
-void pq_push(PriorityQueue *pq, Node *node);
-Node *pq_pop(PriorityQueue *pq);
-Node *pq_merge(PriorityQueue *pq);
-void pq_free(PriorityQueue *pq);
+void pq_push(PriorityQueue *priority_queue, Node *node);
+Node *pq_pop(PriorityQueue *priority_queue);
+Node *pq_merge(PriorityQueue *priority_queue);
+void pq_free(PriorityQueue *priority_queue);
 
-HuffmanTree *create_tree(Node *node, uint8_t symbol_len);
+HuffmanTree *create_tree(Node *node, uint8_t symbol_length);
 void free_tree(HuffmanTree *tree);
 
 HashTable *create_hash_table(uint32_t capacity);
 void free_hash_table(HashTable *table);
 void free_hash_entry(HashTableEntry *entry);
-uint32_t hash_function(uint8_t *symbol, uint8_t symbol_len,
+uint32_t hash_function(uint8_t *symbol, uint8_t symbol_length,
                        uint32_t table_size);
-void add_symbol_hash(HashTable *table, uint8_t *symbol, uint8_t symbol_len,
-                     uint32_t code, uint8_t code_len);
+void add_symbol_hash(HashTable *table, uint8_t *symbol, uint8_t symbol_length,
+                     uint32_t code, uint8_t code_length);
 
-int compare_symbols(uint8_t *symbol1, uint8_t *symbol2, uint8_t symbol_len);
-uint8_t *min_symbol(Node *node);
+int compare_symbols(uint8_t *symbol1, uint8_t *symbol2, uint8_t symbol_length);
 int height_left(Node *node);
 
-int compress_file(FILE *input, FILE *output, uint8_t symbol_len,
-                  uint64_t original_file_size);
-HuffmanTree *count_freq_1b(FILE *file);
-HuffmanTree *count_freq_hash(FILE *file, uint8_t symbol_len);
-void counting_code_lengths(HuffmanTree *ht, Node *root);
-void counting_len_recursion(HuffmanTree *ht, Node *node, uint8_t code_len);
-void encoding_from_len(HuffmanTree *ht);
-int write_header_to_file(FILE *out, HuffmanTree *ht,
-                         uint64_t original_file_size);
-int write_encoded_file_1b(FILE *input, FILE *output, HuffmanTree *ht);
-int write_encoded_file_hash(FILE *input, FILE *output, HuffmanTree *ht);
-
-int decompress_file(FILE *input, FILE *output);
-HuffmanTree *read_header(FILE *file, uint64_t *original_file_size_ptr);
-void recovering_codes(HuffmanTree *ht);
-int writing_decoded_file(FILE *in, FILE *out, HuffmanTree *ht,
-                         uint64_t original_file_size);
 #endif
