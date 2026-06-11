@@ -94,11 +94,11 @@ run_tests() {
 		"$symbol_size" \
 		"$original_size" \
 		"$compressed_size" \
-		"$avg_compress" \
-		"$stddev_compress" \
-		"$avg_decompress" \
-		"$stddev_decompress" \
-		"$ratio" \
+		"$(echo "$avg_compress" | sed 's/\./,/')" \
+		"$(echo "$stddev_compress" | sed 's/\./,/')" \
+		"$(echo "$avg_decompress" | sed 's/\./,/')" \
+		"$(echo "$stddev_decompress" | sed 's/\./,/')" \
+		"$(echo "$ratio" | sed 's/\./,/')" \
 		>> test/results.csv
 
 	rm -f "$compressed" "$restored"
