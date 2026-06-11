@@ -40,11 +40,7 @@ void free_node(Node *node) {
   free(node);
 }
 
-uint8_t node_is_leaf(Node *node) {
-  if (node->left || node->right)
-    return 0;
-  return 1;
-}
+uint8_t node_is_leaf(Node *node) { return !node->left && !node->right; }
 
 PriorityQueue *pq_create(uint32_t initial_capacity) {
 

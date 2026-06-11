@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -fsanitize=address,undefined -MMD -MP
+CFLAGS = -O2 -march=native -Wall -Wextra -Wpedantic -MMD -MP
 LDFLAGS =
 
 TARGET = huffArchiver

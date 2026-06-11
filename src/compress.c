@@ -21,12 +21,12 @@ HuffmanTree *count_freq_1b(FILE *file) {
 
   rewind(file);
 
-  uint32_t sym_count = 0;
+  uint32_t symbols_count = 0;
   PriorityQueue *priority_queue = pq_create(256);
   for (int i = 0; i < 256; i++) {
     if (frequency[i] > 0) {
       uint8_t symbol = (uint8_t)i;
-      sym_count++;
+      symbols_count++;
       Node *node = create_node(&symbol, frequency[i], 1);
       pq_push(priority_queue, node);
     }
@@ -35,7 +35,7 @@ HuffmanTree *count_freq_1b(FILE *file) {
   Node *root = pq_merge(priority_queue);
   HuffmanTree *huffman_tree = create_tree(root, 1);
 
-  huffman_tree->codes = (uint32_t *)malloc(sizeof(uint32_t) * sym_count);
+  huffman_tree->codes = (uint32_t *)malloc(sizeof(uint32_t) * symbols_count);
   if (!huffman_tree->codes) {
     fprintf(stderr, "Failed to allocate memory while counting frequencies.\n");
     free(frequency);
@@ -45,7 +45,8 @@ HuffmanTree *count_freq_1b(FILE *file) {
     return NULL;
   }
 
-  huffman_tree->code_lengths = (uint8_t *)malloc(sizeof(uint8_t) * sym_count);
+  huffman_tree->code_lengths =
+      (uint8_t *)malloc(sizeof(uint8_t) * symbols_count);
   if (!huffman_tree->code_lengths) {
     fprintf(stderr, "Failed to allocate memory while counting frequencies.\n");
     free(frequency);
@@ -55,7 +56,7 @@ HuffmanTree *count_freq_1b(FILE *file) {
     return NULL;
   }
 
-  huffman_tree->symbols = (uint8_t **)malloc(sizeof(uint8_t *) * sym_count);
+  huffman_tree->symbols = (uint8_t **)malloc(sizeof(uint8_t *) * symbols_count);
   if (!huffman_tree->symbols) {
     fprintf(stderr, "Failed to allocate memory while counting frequencies.\n");
     free(frequency);
@@ -65,8 +66,15 @@ HuffmanTree *count_freq_1b(FILE *file) {
     return NULL;
   }
 
-  if (sym_count == 1) {
-    fread(byte, 1, 1, file);
+  if (symbols_count == 1) {
+    if (fread(byte, 1, 1, file) != 1) {
+      fprintf(stderr, "No byte to read in a single-symbol file.\n");
+      free(frequency);
+      free(byte);
+      free(priority_queue);
+      free_tree(huffman_tree);
+      return NULL;
+    }
     huffman_tree->codes[0] = 0;
     huffman_tree->code_lengths[0] = 1;
     huffman_tree->symbols[0] = huffman_tree->root->symbol_data;
@@ -128,11 +136,11 @@ HuffmanTree *count_freq_hash(FILE *file, uint8_t symbol_length) {
     }
   }
 
-  uint32_t sym_count = priority_queue->size;
+  uint32_t symbols_count = priority_queue->size;
   Node *root = pq_merge(priority_queue);
   HuffmanTree *huffman_tree = create_tree(root, symbol_length);
 
-  huffman_tree->codes = (uint32_t *)malloc(sizeof(uint32_t) * sym_count);
+  huffman_tree->codes = (uint32_t *)malloc(sizeof(uint32_t) * symbols_count);
   if (!huffman_tree->codes) {
     fprintf(stderr, "Failed to allocate memory while counting frequncies.\n");
     free_hash_table(hash_table);
@@ -142,7 +150,8 @@ HuffmanTree *count_freq_hash(FILE *file, uint8_t symbol_length) {
     return NULL;
   }
 
-  huffman_tree->code_lengths = (uint8_t *)malloc(sizeof(uint8_t) * sym_count);
+  huffman_tree->code_lengths =
+      (uint8_t *)malloc(sizeof(uint8_t) * symbols_count);
   if (!huffman_tree->code_lengths) {
     fprintf(stderr, "Failed to allocate memory while counting frequncies.\n");
     free_hash_table(hash_table);
@@ -152,7 +161,7 @@ HuffmanTree *count_freq_hash(FILE *file, uint8_t symbol_length) {
     return NULL;
   }
 
-  huffman_tree->symbols = (uint8_t **)malloc(sizeof(uint8_t *) * sym_count);
+  huffman_tree->symbols = (uint8_t **)malloc(sizeof(uint8_t *) * symbols_count);
   if (!huffman_tree->symbols) {
     fprintf(stderr, "Failed to allocate memory while counting frequncies.\n");
     free_hash_table(hash_table);
@@ -162,8 +171,15 @@ HuffmanTree *count_freq_hash(FILE *file, uint8_t symbol_length) {
     return NULL;
   }
 
-  if (sym_count == 1) {
-    fread(buffer, 1, symbol_length, file);
+  if (symbols_count == 1) {
+    if (fread(buffer, 1, symbol_length, file) != symbol_length) {
+      fprintf(stderr, "No bytes to read in a single-symbol file.\n");
+      free_hash_table(hash_table);
+      free(buffer);
+      pq_free(priority_queue);
+      free_tree(huffman_tree);
+      return NULL;
+    }
     huffman_tree->codes[0] = 0;
     huffman_tree->code_lengths[0] = 1;
     huffman_tree->symbols[0] = huffman_tree->root->symbol_data;

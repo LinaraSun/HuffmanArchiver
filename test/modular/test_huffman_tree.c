@@ -1,5 +1,5 @@
 #include <assert.h>
-#include "huffman.h"
+#include "compress.h"
 
 void test_two_nodes_encoding() {
 	uint8_t symbolA[] = {'A'};

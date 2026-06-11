@@ -54,6 +54,11 @@ run_tests() {
 		decompress_sum=$(awk "BEGIN {print $decompress_sum + $t}")
 	done
 
+	if ! cmp -s "$path" "$restored"; then
+		echo -e "${RED}FAIL${NC}: $file_name"
+		return 1
+	fi
+
 	local compressed_size=$(stat -c%s "$compressed")
 	local ratio=$(awk "BEGIN {print $compressed_size / $original_size}")
 
