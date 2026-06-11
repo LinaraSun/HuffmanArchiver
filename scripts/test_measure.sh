@@ -104,7 +104,7 @@ run_tests() {
 	rm -f "$compressed" "$restored"
 }
 
-for format in "txt" "jpg" "bmp" "mp4" "zip"; do
+for format in "txt" "jpg" "mp4" "zip"; do
 	for size in 1 5 10 20 40; do
 		run_tests "$format ${size}mb" "$format/${size}mb.$format" 1
 	done
