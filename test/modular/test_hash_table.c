@@ -148,9 +148,9 @@ void test_codes() {
 	assert(table->buckets[index_cd]->code == 2);
 	assert(table->buckets[index_ef]->code == 3);
 
-	assert(table->buckets[index_ab]->code_len == 2);
-	assert(table->buckets[index_cd]->code_len == 2);
-	assert(table->buckets[index_ef]->code_len == 2);
+	assert(table->buckets[index_ab]->code_length == 2);
+	assert(table->buckets[index_cd]->code_length == 2);
+	assert(table->buckets[index_ef]->code_length == 2);
 
 	free_hash_table(table);
 }

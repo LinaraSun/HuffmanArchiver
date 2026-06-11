@@ -2,32 +2,32 @@
 #include "huffman.h"
 
 void test_empty_pq() {
-	PriorityQueue* pq = pq_create(256);
-	assert(pq->size == 0);
-	assert(pq_pop(pq) == NULL);
-	pq_free(pq);
+	PriorityQueue* priority_queue = pq_create(256);
+	assert(priority_queue->size == 0);
+	assert(pq_pop(priority_queue) == NULL);
+	pq_free(priority_queue);
 }
 
 void test_one_node() {
-	PriorityQueue* pq = pq_create(256);
+	PriorityQueue* priority_queue = pq_create(256);
 
 	uint8_t symbol[] = {'A'};
 
 	Node* node = create_node(symbol, 5, 1);
 
-	pq_push(pq, node);
+	pq_push(priority_queue, node);
 
-	assert(pq->size == 1);
-	assert(pq_pop(pq) == node);
-	assert(pq->size == 0);
+	assert(priority_queue->size == 1);
+	assert(pq_pop(priority_queue) == node);
+	assert(priority_queue->size == 0);
 
 	free(node->symbol_data);
 	free_node(node);
-	pq_free(pq);
+	pq_free(priority_queue);
 }
 
 void test_multiple_nodes() {
-	PriorityQueue* pq = pq_create(256);
+	PriorityQueue* priority_queue = pq_create(256);
 
 	uint8_t symbolA[] = {'A'};
 	uint8_t symbolB[] = {'B'};
@@ -41,25 +41,25 @@ void test_multiple_nodes() {
 	Node* node4 = create_node(symbolD, 2, 1);
 	Node* node5 = create_node(symbolE, 16, 1);
 
-	pq_push(pq, node1);
-	pq_push(pq, node2);
-	pq_push(pq, node3);
-	pq_push(pq, node4);
-	pq_push(pq, node5);
+	pq_push(priority_queue, node1);
+	pq_push(priority_queue, node2);
+	pq_push(priority_queue, node3);
+	pq_push(priority_queue, node4);
+	pq_push(priority_queue, node5);
 
-	Node* last_node = pq_pop(pq);
+	Node* last_node = pq_pop(priority_queue);
 	assert(last_node == node4);
 
-	last_node = pq_pop(pq);
+	last_node = pq_pop(priority_queue);
 	assert(last_node == node1);
 
-	last_node = pq_pop(pq);
+	last_node = pq_pop(priority_queue);
 	assert(last_node == node2);
 
-	last_node = pq_pop(pq);
+	last_node = pq_pop(priority_queue);
 	assert(last_node == node3);
 
-	last_node = pq_pop(pq);
+	last_node = pq_pop(priority_queue);
 	assert(last_node == node5);
 
 	free(node1->symbol_data);
@@ -74,11 +74,11 @@ void test_multiple_nodes() {
 	free_node(node4);
 	free_node(node5);
 
-	pq_free(pq);
+	pq_free(priority_queue);
 }
 
 void test_same_freq_nodes() {
-	PriorityQueue* pq = pq_create(256);
+	PriorityQueue* priority_queue = pq_create(256);
 
 	uint8_t symbolA[] = {'A'};
 	uint8_t symbolB[] = {'B'};
@@ -90,21 +90,21 @@ void test_same_freq_nodes() {
 	Node* node3 = create_node(symbolC, 5, 1);
 	Node* node4 = create_node(symbolB, 5, 1);
 
-	pq_push(pq, node1);
-	pq_push(pq, node2);
-	pq_push(pq, node3);
-	pq_push(pq, node4);
+	pq_push(priority_queue, node1);
+	pq_push(priority_queue, node2);
+	pq_push(priority_queue, node3);
+	pq_push(priority_queue, node4);
 
-	Node* last_node = pq_pop(pq);
+	Node* last_node = pq_pop(priority_queue);
 	assert(last_node == node1);
 
-	last_node = pq_pop(pq);
+	last_node = pq_pop(priority_queue);
 	assert(last_node == node3);
 
-	last_node = pq_pop(pq);
+	last_node = pq_pop(priority_queue);
 	assert(last_node == node4);
 
-	last_node = pq_pop(pq);
+	last_node = pq_pop(priority_queue);
 	assert(last_node == node2);
 
 	free(node1->symbol_data);
@@ -117,11 +117,11 @@ void test_same_freq_nodes() {
 	free_node(node3);
 	free_node(node4);
 
-	pq_free(pq);
+	pq_free(priority_queue);
 }
 
 void test_leaf_and_internal() {
-	PriorityQueue* pq = pq_create(256);
+	PriorityQueue* priority_queue = pq_create(256);
 
 	uint8_t symbolA[] = {'A'};
 	uint8_t symbolB[] = {'B'};
@@ -135,11 +135,11 @@ void test_leaf_and_internal() {
 	internal->left = node1;
 	internal->right = node2;
 
-	pq_push(pq, leaf);
-	pq_push(pq, internal);
+	pq_push(priority_queue, leaf);
+	pq_push(priority_queue, internal);
 
-	assert(leaf == pq_pop(pq));
-	assert(internal == pq_pop(pq));
+	assert(leaf == pq_pop(priority_queue));
+	assert(internal == pq_pop(priority_queue));
 
 	free(node1->symbol_data);
 	free(node2->symbol_data);
@@ -148,11 +148,11 @@ void test_leaf_and_internal() {
 	free_node(internal);
 	free_node(leaf);
 
-	pq_free(pq);
+	pq_free(priority_queue);
 }
 
 void test_merge() {
-	PriorityQueue* pq = pq_create(256);
+	PriorityQueue* priority_queue = pq_create(256);
 
 	uint8_t symbolA[] = {'A'};
 	uint8_t symbolB[] = {'B'};
@@ -166,13 +166,13 @@ void test_merge() {
 	Node* node4 = create_node(symbolD, 5, 1);
 	Node* node5 = create_node(symbolE, 8, 1);
 
-	pq_push(pq, node1);
-	pq_push(pq, node2);
-	pq_push(pq, node3);
-	pq_push(pq, node4);
-	pq_push(pq, node5);
+	pq_push(priority_queue, node1);
+	pq_push(priority_queue, node2);
+	pq_push(priority_queue, node3);
+	pq_push(priority_queue, node4);
+	pq_push(priority_queue, node5);
 
-	Node* root = pq_merge(pq);
+	Node* root = pq_merge(priority_queue);
 
 	assert(root != NULL);
 	assert(root->right != NULL);
@@ -192,7 +192,7 @@ void test_merge() {
 
 	free_node(root);
 
-	pq_free(pq);
+	pq_free(priority_queue);
 }
 
 int main() {

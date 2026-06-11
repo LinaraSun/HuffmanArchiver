@@ -11,26 +11,26 @@ void test_two_nodes_encoding() {
 	root->right = node1;
 	root->left = node2;
 
-	HuffmanTree* ht = create_tree(root, 1);
-	ht->symbols = (uint8_t**)malloc(sizeof(uint8_t*) * 2);
-	ht->code_lengths = (uint8_t*)malloc(2);
-	ht->codes = (uint32_t*)malloc(sizeof(uint32_t) * 2);
+	HuffmanTree* huffman_tree = create_tree(root, 1);
+	huffman_tree->symbols = (uint8_t**)malloc(sizeof(uint8_t*) * 2);
+	huffman_tree->code_lengths = (uint8_t*)malloc(2);
+	huffman_tree->codes = (uint32_t*)malloc(sizeof(uint32_t) * 2);
 
-	counting_code_lengths(ht, root);
+	counting_code_lengths(huffman_tree, root);
 
-	assert(ht->symbols_count == 2);
-	assert(ht->code_lengths[0] == 1);
-	assert(ht->code_lengths[1] == 1);
+	assert(huffman_tree->symbols_count == 2);
+	assert(huffman_tree->code_lengths[0] == 1);
+	assert(huffman_tree->code_lengths[1] == 1);
 
-	encoding_from_len(ht);
+	encoding_from_len(huffman_tree);
 
-	assert(ht->symbols[0][0] == symbolA[0]);
-	assert(ht->symbols[1][0] == symbolB[0]);
+	assert(huffman_tree->symbols[0][0] == symbolA[0]);
+	assert(huffman_tree->symbols[1][0] == symbolB[0]);
 
-	assert(ht->codes[0] == 0);
-	assert(ht->codes[1] == 1);
+	assert(huffman_tree->codes[0] == 0);
+	assert(huffman_tree->codes[1] == 1);
 
-	free_tree(ht);
+	free_tree(huffman_tree);
 }
 
 void test_three_nodes_encoding() {
@@ -48,29 +48,29 @@ void test_three_nodes_encoding() {
 	root->left->right = node1;
 	root->left->left = node2;
 
-	HuffmanTree* ht = create_tree(root, 1);
-	ht->symbols = (uint8_t**)malloc(sizeof(uint8_t*) * 3);
-	ht->code_lengths = (uint8_t*)malloc(3);
-	ht->codes = (uint32_t*)malloc(sizeof(uint32_t) * 3);
+	HuffmanTree* huffman_tree = create_tree(root, 1);
+	huffman_tree->symbols = (uint8_t**)malloc(sizeof(uint8_t*) * 3);
+	huffman_tree->code_lengths = (uint8_t*)malloc(3);
+	huffman_tree->codes = (uint32_t*)malloc(sizeof(uint32_t) * 3);
 
-	counting_code_lengths(ht, root);
+	counting_code_lengths(huffman_tree, root);
 
-	assert(ht->symbols_count == 3);
-	assert(ht->code_lengths[0] == 1);
-	assert(ht->code_lengths[1] == 2);
-	assert(ht->code_lengths[2] == 2);
+	assert(huffman_tree->symbols_count == 3);
+	assert(huffman_tree->code_lengths[0] == 1);
+	assert(huffman_tree->code_lengths[1] == 2);
+	assert(huffman_tree->code_lengths[2] == 2);
 
-	encoding_from_len(ht);
+	encoding_from_len(huffman_tree);
 
-	assert(ht->symbols[0][0] == symbolC[0]);
-	assert(ht->symbols[1][0] == symbolA[0]);
-	assert(ht->symbols[2][0] == symbolB[0]);
+	assert(huffman_tree->symbols[0][0] == symbolC[0]);
+	assert(huffman_tree->symbols[1][0] == symbolA[0]);
+	assert(huffman_tree->symbols[2][0] == symbolB[0]);
 
-	assert(ht->codes[0] == 0);
-	assert(ht->codes[1] == 2);
-	assert(ht->codes[2] == 3);
+	assert(huffman_tree->codes[0] == 0);
+	assert(huffman_tree->codes[1] == 2);
+	assert(huffman_tree->codes[2] == 3);
 
-	free_tree(ht);
+	free_tree(huffman_tree);
 }
 
 int main() {
