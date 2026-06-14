@@ -73,10 +73,10 @@ The archive contains as follows:
 
 * 4 bytes of magic word "HUFF"
 * Version (in 1 byte format): Currently the program only supports version 1
-* Symbol size (in 1 byte format)
+* Symbol size (amount of bytes in 1 byte format)
 * Original file size (in 8 bytes format)
 * Amount of unique symbols (in 4 bytes format)
-* Every unique symbol followed by its code length (code lengths are written in 1 byte format)
+* Every unique symbol followed by its code length (code lengths are amounts of bits written in 1 byte format)
 * Compressed data stream
 
 The decompressor reads the header and reconstructs canonical Huffman codes from the stored code lengths.

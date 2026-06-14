@@ -2,10 +2,15 @@
 #define DECOMPRESS_H
 #include "huffman.h"
 
-// Entry of a hash table for fast lookup of symbols using codes
+/** @brief Entry of the decode hash table for fast code lookup. */
 typedef struct HashDecodeEntry HashDecodeEntry;
 
-// Function for decompressing the input file to output file
+/**
+ * @brief Decompresses data from an input file to an output file.
+ * @param input Input file stream.
+ * @param output Output file stream.
+ * @return 0 on success, non-zero on error.
+ */
 int decompress_file(FILE *input, FILE *output);
 
 #endif

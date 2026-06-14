@@ -6,61 +6,145 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Nodes for Huffman table and priority queue
+/** @brief Nodes for Huffman tree and priority queue. */
 typedef struct Node Node;
 
-// Priority queue for building the Huffman tree
+/** @brief Priority queue used for Huffman tree construction. */
 typedef struct PriorityQueue PriorityQueue;
 
-// Huffman tree for counting code lengths
+/** @brief Huffman tree structure. */
 typedef struct HuffmanTree HuffmanTree;
 
-// Entry of hash table
+/** @brief Entry of the hash table. */
 typedef struct HashTableEntry HashTableEntry;
 
-// Hash table for counting frequencies
+/** @brief Hash table used for frequency counting. */
 typedef struct HashTable HashTable;
 
-// Creating a node
+/**
+ * @brief Creates a new node.
+ * @param symbol Symbol associated with the node.
+ * @param frequency Frequency of the symbol.
+ * @param symbol_length Length of the symbol in bytes.
+ * @return Pointer to the created node.
+ */
 Node *create_node(uint8_t *symbol, uint32_t frequency, uint8_t symbol_length);
-// Freeing the data of a node (excluding symbol data)
+
+/**
+ * @brief Frees node data excluding symbol data.
+ * @param node Node to free.
+ */
 void free_node(Node *node);
-// Checking if the given node is a leaf
+
+/**
+ * @brief Checks whether a node is a leaf.
+ * @param node Node to check.
+ * @return Non-zero if the node is a leaf, zero otherwise.
+ */
 uint8_t node_is_leaf(Node *node);
 
-// Creating a priority queue
+/**
+ * @brief Creates a priority queue.
+ * @param capacity Initial queue capacity.
+ * @return Pointer to the created priority queue.
+ */
 PriorityQueue *pq_create(uint32_t capacity);
-// Pushing a node to priority queue
+
+/**
+ * @brief Inserts a node into the priority queue.
+ * @param priority_queue Target priority queue.
+ * @param node Node to insert.
+ */
 void pq_push(PriorityQueue *priority_queue, Node *node);
-// Taking the last node of a priority queue, deleting it from the priority queue
-// and returning it
+
+/**
+ * @brief Removes and returns the last node.
+ * @param priority_queue Source priority queue.
+ * @return Pointer to the removed node.
+ */
 Node *pq_pop(PriorityQueue *priority_queue);
-// Building the Huffman tree and returning the root
+
+/**
+ * @brief Builds a Huffman tree from the priority queue.
+ * @param priority_queue Priority queue containing leaf nodes.
+ * @return Root node of the Huffman tree.
+ */
 Node *pq_merge(PriorityQueue *priority_queue);
-// Freeing priority queue data (excluding nodes data)
+
+/**
+ * @brief Frees priority queue data excluding stored nodes.
+ * @param priority_queue Priority queue to free.
+ */
 void pq_free(PriorityQueue *priority_queue);
 
-// Creating a Huffman tree
+/**
+ * @brief Creates a Huffman tree.
+ * @param node Root node of the tree.
+ * @param symbol_length Length of symbols in bytes.
+ * @return Pointer to the created Huffman tree.
+ */
 HuffmanTree *create_tree(Node *node, uint8_t symbol_length);
-// Freeing the Huffman tree data (including symbol data)
+
+/**
+ * @brief Frees Huffman tree data including symbol data.
+ * @param tree Huffman tree to free.
+ */
 void free_tree(HuffmanTree *tree);
 
-// Creating hash table
+/**
+ * @brief Creates a hash table.
+ * @param capacity Hash table capacity.
+ * @return Pointer to the created hash table.
+ */
 HashTable *create_hash_table(uint32_t capacity);
-// Freeing hash table data
+
+/**
+ * @brief Frees hash table data.
+ * @param table Hash table to free.
+ */
 void free_hash_table(HashTable *table);
-// Freeing hash table entry data
+
+/**
+ * @brief Frees hash table entry data.
+ * @param entry Hash table entry to free.
+ */
 void free_hash_entry(HashTableEntry *entry);
-// Hash function for counting frequencies using hash table
+
+/**
+ * @brief Computes a hash value for a symbol.
+ * @param symbol Symbol data.
+ * @param symbol_length Length of the symbol in bytes.
+ * @param table_size Hash table size.
+ * @return Hash value.
+ */
 uint32_t hash_function(uint8_t *symbol, uint8_t symbol_length,
                        uint32_t table_size);
-// Adding symbol to hash table or incrementing frequency
+
+/**
+ * @brief Adds a symbol to the hash table or increments its frequency.
+ * @param table Hash table.
+ * @param symbol Symbol data.
+ * @param symbol_length Length of the symbol in bytes.
+ * @param code Symbol code.
+ * @param code_length Code length in bits.
+ */
 void add_symbol_hash(HashTable *table, uint8_t *symbol, uint8_t symbol_length,
                      uint32_t code, uint8_t code_length);
 
-// Comparing symbols
+/**
+ * @brief Compares two symbols lexicographically.
+ * @param symbol1 First symbol.
+ * @param symbol2 Second symbol.
+ * @param symbol_length Length of symbols in bytes.
+ * @return Negative, zero, or positive value as in memcmp().
+ */
 int compare_symbols(uint8_t *symbol1, uint8_t *symbol2, uint8_t symbol_length);
-// Counting height for deterministic Huffman tree building
+
+/**
+ * @brief Computes the left height of a subtree.
+ * @param node Root node of the subtree.
+ * @return Left height of the subtree.
+ */
 int height_left(Node *node);
 
 #endif
