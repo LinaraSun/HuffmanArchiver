@@ -87,16 +87,26 @@ The decompressor reads the header and reconstructs canonical Huffman codes from 
 ```text
 .
 ├── src/
-│   ├── huffman.h
-│   ├── huffman.c
-│   ├── compress.h
-│   ├── compress.c
-│   ├── decompress.h
-│   ├── decompress.c
-│   └── main.c
+│   ├── huffman.h # declarations of data structures and
+│   │	          # functions used by the Huffman coding modules
+│   ├── huffman.c # implementation of Huffman tree construction,
+│   │             # code generation, and auxiliary data structures
+│   ├── compress.h # declarations of functions related to
+│   │              # file compression
+│   ├── compress.c # implementation of the file compression
+│   │              # algorithm and archive creation
+│   ├── decompress.h # declarations of data structures and
+│   │                # functions related to file decompression
+│   ├── decompress.c # implementation of archive reading
+│   │                # and original file reconstruction
+│   └── main.c # program entry point, command-line argument
+│              # processing, and selection of compression
+│              # or decompression mode
 ├── test/
-│   ├── modular/
+│   ├── modular/ # modular tests
 │   └── test_data/
+│       ├── comparison/ # experiment files
+│       └── roundtrip/ # basic integration test files
 ├── scripts/
 ├── Makefile
 ├── LICENSE

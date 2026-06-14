@@ -3,6 +3,25 @@
 #define TABLE_BITS 12
 #define TABLE_SIZE (1 << TABLE_BITS)
 
+struct HuffmanTree {
+  Node *root;
+  uint32_t *codes;
+  uint8_t **symbols;
+  uint8_t *code_lengths;
+  uint32_t symbols_count;
+  uint8_t symbol_length;
+};
+
+struct HashDecodeEntry {
+  uint8_t *symbol;
+  uint8_t code_length;
+};
+
+HuffmanTree *read_header(FILE *file, uint64_t *original_file_size_ptr);
+void recovering_codes(HuffmanTree *huffman_tree);
+int writing_decoded_file(FILE *input, FILE *output, HuffmanTree *huffman_tree,
+                         uint64_t original_file_size);
+
 HuffmanTree *read_header(FILE *file, uint64_t *original_file_size_ptr) {
 
   uint8_t *buffer_4b = (uint8_t *)malloc(sizeof(uint8_t) * 4);

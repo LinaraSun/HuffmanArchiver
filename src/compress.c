@@ -1,5 +1,53 @@
 #include "compress.h"
 
+struct Node {
+  uint8_t *symbol_data;
+  uint32_t frequency;
+  uint8_t symbol_length;
+  struct Node *right;
+  struct Node *left;
+};
+
+struct PriorityQueue {
+  Node **nodes;
+  uint32_t size;
+  uint32_t capacity;
+};
+
+struct HuffmanTree {
+  Node *root;
+  uint32_t *codes;
+  uint8_t **symbols;
+  uint8_t *code_lengths;
+  uint32_t symbols_count;
+  uint8_t symbol_length;
+};
+
+struct HashTableEntry {
+  uint8_t *symbol_data;
+  uint32_t frequency;
+  uint8_t symbol_length;
+  uint32_t code;
+  uint8_t code_length;
+  struct HashTableEntry *next;
+};
+
+struct HashTable {
+  HashTableEntry **buckets;
+  uint32_t size;
+  uint32_t capacity;
+};
+
+HuffmanTree *count_freq_1b(FILE *file);
+HuffmanTree *count_freq_hash(FILE *file, uint8_t symbol_length);
+void counting_len_recursion(HuffmanTree *huffman_tree, Node *node,
+                            uint8_t code_length);
+int write_header_to_file(FILE *output, HuffmanTree *huffman_tree,
+                         uint64_t original_file_size);
+int write_encoded_file_1b(FILE *input, FILE *output, HuffmanTree *huffman_tree);
+int write_encoded_file_hash(FILE *input, FILE *output,
+                            HuffmanTree *huffman_tree);
+
 HuffmanTree *count_freq_1b(FILE *file) {
   uint32_t *frequency = (uint32_t *)calloc(sizeof(uint32_t) * 256, 1);
   if (!frequency) {

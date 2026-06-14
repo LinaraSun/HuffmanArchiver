@@ -1,5 +1,43 @@
 #include "huffman.h"
 
+struct Node {
+  uint8_t *symbol_data;
+  uint32_t frequency;
+  uint8_t symbol_length;
+  struct Node *right;
+  struct Node *left;
+};
+
+struct PriorityQueue {
+  Node **nodes;
+  uint32_t size;
+  uint32_t capacity;
+};
+
+struct HuffmanTree {
+  Node *root;
+  uint32_t *codes;
+  uint8_t **symbols;
+  uint8_t *code_lengths;
+  uint32_t symbols_count;
+  uint8_t symbol_length;
+};
+
+struct HashTableEntry {
+  uint8_t *symbol_data;
+  uint32_t frequency;
+  uint8_t symbol_length;
+  uint32_t code;
+  uint8_t code_length;
+  struct HashTableEntry *next;
+};
+
+struct HashTable {
+  HashTableEntry **buckets;
+  uint32_t size;
+  uint32_t capacity;
+};
+
 Node *create_node(uint8_t *symbol, uint32_t frequency, uint8_t symbol_length) {
   Node *node = (Node *)malloc(sizeof(Node));
   if (!node) {
